@@ -52,10 +52,23 @@ example (ubf : FnHasUb f) (ubg : FnHasUb g) : FnHasUb fun x ↦ f x + g x := by
   apply fnUb_add ubfa ubgb
 
 example (lbf : FnHasLb f) (lbg : FnHasLb g) : FnHasLb fun x ↦ f x + g x := by
-  sorry
+  obtain ⟨a, fa⟩ := lbf
+  obtain ⟨ b, fb⟩ := lbg
+  use a + b
+  intro x
+  dsimp
+  apply add_le_add
+  apply fa
+  apply fb
 
 example {c : ℝ} (ubf : FnHasUb f) (h : c ≥ 0) : FnHasUb fun x ↦ c * f x := by
-  sorry
+  obtain ⟨ b, fb⟩ := ubf
+  use c*b
+  intro x
+  apply mul_le_mul_of_nonneg_left
+  apply fb
+  apply h
+
 
 example : FnHasUb f → FnHasUb g → FnHasUb fun x ↦ f x + g x := by
   rintro ⟨a, ubfa⟩ ⟨b, ubgb⟩
@@ -129,8 +142,10 @@ example (divab : a ∣ b) (divbc : b ∣ c) : a ∣ c := by
   use d * e; ring
 
 example (divab : a ∣ b) (divac : a ∣ c) : a ∣ b + c := by
-  sorry
-
+  obtain ⟨d, ad⟩ := divab
+  obtain ⟨e, ae⟩ := divac
+  use d + e
+  rw [mul_add, ad, ae]
 end
 
 section
@@ -143,7 +158,11 @@ example {c : ℝ} : Surjective fun x ↦ x + c := by
   dsimp; ring
 
 example {c : ℝ} (h : c ≠ 0) : Surjective fun x ↦ c * x := by
-  sorry
+  intro x
+  use x / c
+  dsimp
+  apply mul_div_cancel'
+  exact h
 
 example (x y : ℝ) (h : x - y ≠ 0) : (x ^ 2 - y ^ 2) / (x - y) = x + y := by
   field_simp [h]
@@ -163,6 +182,10 @@ variable {α : Type*} {β : Type*} {γ : Type*}
 variable {g : β → γ} {f : α → β}
 
 example (surjg : Surjective g) (surjf : Surjective f) : Surjective fun x ↦ g (f x) := by
-  sorry
-
+  intro z
+  dsimp
+  rcases surjg z with ⟨y,hy⟩
+  rcases surjf y with ⟨x,hx⟩
+  use x
+  rw [hx, hy]
 end

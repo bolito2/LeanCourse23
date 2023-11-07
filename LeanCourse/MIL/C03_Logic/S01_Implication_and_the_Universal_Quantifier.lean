@@ -135,11 +135,21 @@ example (mf : Monotone f) (mg : Monotone g) : Monotone fun x ↦ f x + g x := by
 example (mf : Monotone f) (mg : Monotone g) : Monotone fun x ↦ f x + g x :=
   fun a b aleb ↦ add_le_add (mf aleb) (mg aleb)
 
-example {c : ℝ} (mf : Monotone f) (nnc : 0 ≤ c) : Monotone fun x ↦ c * f x :=
-  sorry
+example {c : ℝ} (mf : Monotone f) (nnc : 0 ≤ c) : Monotone fun x ↦ c * f x := by
+  intro a b aleb
+  dsimp
+  rcases eq_or_lt_of_le nnc with h | h
+  · rw [← h, zero_mul, zero_mul]
+  apply (mul_le_mul_left h).mpr
+  apply mf
+  apply aleb
 
-example (mf : Monotone f) (mg : Monotone g) : Monotone fun x ↦ f (g x) :=
-  sorry
+example (mf : Monotone f) (mg : Monotone g) : Monotone fun x ↦ f (g x) := by
+  intro a b aleb
+  dsimp
+  apply mf
+  apply mg
+  exact aleb
 
 def FnEven (f : ℝ → ℝ) : Prop :=
   ∀ x, f x = f (-x)
@@ -155,7 +165,9 @@ example (ef : FnEven f) (eg : FnEven g) : FnEven fun x ↦ f x + g x := by
 
 
 example (of : FnOdd f) (og : FnOdd g) : FnEven fun x ↦ f x * g x := by
-  sorry
+  intro x
+  dsimp
+  rw[of, og, neg_mul_neg]
 
 example (ef : FnEven f) (og : FnOdd g) : FnOdd fun x ↦ f x * g x := by
   sorry
@@ -176,7 +188,10 @@ example : s ⊆ s := by
 theorem Subset.refl : s ⊆ s := fun x xs ↦ xs
 
 theorem Subset.trans : r ⊆ s → s ⊆ t → r ⊆ t := by
-  sorry
+  intro rs st x xr
+  apply st
+  apply rs
+  apply xr
 
 end
 
@@ -187,8 +202,12 @@ variable (s : Set α) (a b : α)
 def SetUb (s : Set α) (a : α) :=
   ∀ x, x ∈ s → x ≤ a
 
-example (h : SetUb s a) (h' : a ≤ b) : SetUb s b :=
-  sorry
+example (h : SetUb s a) (h' : a ≤ b) : SetUb s b := by
+  intro x xs
+  apply le_trans
+  apply h
+  apply xs
+  apply h'
 
 end
 
@@ -201,12 +220,20 @@ example (c : ℝ) : Injective fun x ↦ x + c := by
   exact (add_left_inj c).mp h'
 
 example {c : ℝ} (h : c ≠ 0) : Injective fun x ↦ c * x := by
-  sorry
+  intro x
+  dsimp
+  intro y
+  intro h'
+  apply (mul_right_inj' h).mp
+  apply h'
 
 variable {α : Type*} {β : Type*} {γ : Type*}
 variable {g : β → γ} {f : α → β}
 
 example (injg : Injective g) (injf : Injective f) : Injective fun x ↦ g (f x) := by
-  sorry
+  intro x y h
+  apply injf
+  apply injg
+  apply h
 
 end
