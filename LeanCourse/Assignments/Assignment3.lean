@@ -22,12 +22,22 @@ open Nat Real Function Set
 
 /- Prove the law of excluded middle without using `by_cases` or lemmas from the library.
 You will need to use `by_contra` in the proof. -/
-lemma exercise3_1 (p : Prop) : p ∨ ¬ p := by sorry
+lemma exercise3_1 (p : Prop) : p ∨ ¬ p := by
+  by_contra h
 
+  have h' : ¬ p := by
+    intro h2
+    apply h
+    left
+    exact h2
 
+  have h : p := by
+    by_contra h3
+    apply h
+    right
+    exact h'
 
-
-
+  apply h' h
 
 /- ## Converging sequences
 

@@ -65,7 +65,10 @@ section
 variable {α : Type*} (P : α → Prop) (Q : Prop)
 
 example (h : ¬∃ x, P x) : ∀ x, ¬P x := by
-  sorry
+  intro x
+  by_contra h'
+  apply h
+  exact ⟨x, h'⟩
 
 example (h : ∀ x, ¬P x) : ¬∃ x, P x := by
   sorry
@@ -85,11 +88,14 @@ example (h : ¬∀ x, P x) : ∃ x, ¬P x := by
   exact h' ⟨x, h''⟩
 
 example (h : ¬¬Q) : Q := by
-  sorry
+  by_contra h'
+  apply h
+  exact h'
 
 example (h : Q) : ¬¬Q := by
-  sorry
-
+  intro h'
+  apply h'
+  exact h
 end
 
 section
