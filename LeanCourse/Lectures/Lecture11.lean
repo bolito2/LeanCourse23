@@ -1,21 +1,28 @@
-import Mathlib.Tactic
+import LeanCourse.Common
 import Mathlib.Topology.Instances.Real
 import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
-
-open Topology Filter Set Function TopologicalSpace
-open MeasureTheory
+open BigOperators Function Set Filter Topology TopologicalSpace MeasureTheory
+noncomputable section
 set_option linter.unusedVariables false
-
-namespace TopologySession
-
+local macro_rules | `($x ^ $y) => `(HPow.hPow $x $y)
 
 
+/- # Today: Topology
+
+We cover chapter 9 from Mathematics in Lean. -/
+
+
+/-
+Last time we discussed abstract algebra.
+-/
 
 
 
 
 
 
+
+/- # Limits -/
 
 
 /-
@@ -27,7 +34,8 @@ Say `f : ℝ → ℝ`. There are many variants of limits.
 * variations of the above with the additional assumption that `x ≠ x₀`.
 
 This gives 8 different notions of behavior of `x`.
-Similarly, the value `f(x)` can have the same behavior: `f(x)` tends to `∞`, `-∞`, `x₀`, `x₀⁺`, ...
+Similarly, the value `f(x)` can have the same behavior:
+`f(x)` tends to `∞`, `-∞`, `x₀`, `x₀⁺`, ...
 
 This gives `64` notions of limits.
 
@@ -49,16 +57,12 @@ Solution: use filters.
 
 
 
-
-
-
-
 If `X` is a type, a filter `F : Filter X` is a
 collection of sets `F.sets : Set (Set X)` satisfying the following:
 -/
 section Filter
 
-variable {X Y : Type _} (F : Filter X)
+variable {X Y : Type*} (F : Filter X)
 
 #check (F.sets : Set (Set X))
 #check (F.univ_sets : univ ∈ F.sets)
@@ -81,6 +85,9 @@ Examples of filters:
 `{n | n ≥ N}` for some `N` -/
 #check (atTop : Filter ℕ)
 
+example {s : Set ℝ} : s ∈ atTop ↔
+  ∃ N, ∀ n ≥ N, n ∈ s := by exact?
+
 /- `𝓝 x`, made of neighborhoods of `x` in a topological space -/
 #check (𝓝 3 : Filter ℝ)
 
@@ -93,9 +100,12 @@ as a generalized element of `Set X`.
 * `atTop` is the "set of very large numbers"
 * `𝓝 x₀` is the "set of points very close to `x₀`."
 * For each `s : Set X` we have the so-called *principal filter*
-  `𝓟 s` consisting of all sets that contain `s` (exercise!).
+  `𝓟 s` consisting of all sets that contain `s`.
 -/
 
+
+example {s t : Set ℝ} : t ∈ 𝓟 s ↔ s ⊆ t :=
+  by exact?
 
 
 
@@ -103,30 +113,30 @@ as a generalized element of `Set X`.
 
 /- Operations on filters -/
 
-/- the *pushforward* of filters -/
-example (f : X → Y) : Filter X → Filter Y :=
+/- the *pushforward* of filters generalizes images of sets. -/
+example {X Y : Type*} (f : X → Y) : Filter X → Filter Y :=
   Filter.map f
 
-example (f : X → Y) (F : Filter X) (V : Set Y) :
+example {X Y : Type*} (f : X → Y) (F : Filter X) (V : Set Y) :
     V ∈ Filter.map f F ↔ f ⁻¹' V ∈ F := by
   rfl
 
-/- the *pullback* of filters generalizes -/
-example (f : X → Y) : Filter Y → Filter X :=
+/- the *pullback* of filters generalizes preimages -/
+example {X Y : Type*} (f : X → Y) : Filter Y → Filter X :=
   Filter.comap f
 
 /- These form a *Galois connection* / adjunction -/
-example (f : X → Y) (F : Filter X) (G : Filter Y) :
+example {X Y : Type*} (f : X → Y) (F : Filter X) (G : Filter Y) :
     Filter.map f F ≤ G ↔ F ≤ Filter.comap f G := by
   exact?
 
 /- `Filter X` has an order that turns it into a complete lattice. The order is reverse inclusion: -/
-example (F F' : Filter X) :
+example {X : Type*} (F F' : Filter X) :
     F ≤ F' ↔ ∀ V : Set X, V ∈ F' → V ∈ F := by
   rfl
 
 /- This makes the principal filter `𝓟 : Set X → Filter X` monotone. -/
-example : Monotone (𝓟 : Set X → Filter X) := by
+example {X : Type*} : Monotone (𝓟 : Set X → Filter X) := by
   exact?
 
 
@@ -136,11 +146,11 @@ example : Monotone (𝓟 : Set X → Filter X) := by
 
 
 /- Using these operations, we can define the limit. -/
-def Tendsto {X Y : Type _} (f : X → Y)
+def MyTendsto {X Y : Type*} (f : X → Y)
     (F : Filter X) (G : Filter Y) :=
   map f F ≤ G
 
-def Tendsto_iff {X Y : Type _} (f : X → Y)
+def Tendsto_iff {X Y : Type*} (f : X → Y)
     (F : Filter X) (G : Filter Y) :
     Tendsto f F G ↔ ∀ S : Set Y, S ∈ G → f ⁻¹' S ∈ F := by
   rfl
@@ -158,19 +168,24 @@ example (f : ℝ → ℝ) (x₀ y₀ : ℝ) : Prop :=
   Tendsto f (𝓝[<] x₀) (𝓝[≥] y₀)
 
 /- Now the following states all possible composition lemmas all at
-once!-/
-example {X Y Z : Type _} {F : Filter X} {G : Filter Y} {H : Filter Z}
+once! -/
+example {X Y Z : Type*} {F : Filter X} {G : Filter Y} {H : Filter Z}
     {f : X → Y} {g : Y → Z}
     (hf : Tendsto f F G) (hg : Tendsto g G H) :
-    Tendsto (g ∘ f) F H :=
-  sorry -- exercise!
-
+    Tendsto (g ∘ f) F H := by {
+  rw [Tendsto] at *
+  calc
+    map (g ∘ f) F = map g (map f F) := by exact rfl
+    _ ≤ map g G := by gcongr
+    _ ≤ H := by assumption
+}
 
 
 /-
 Filters also allow us to reason about things that are
 "eventually true". If `F : Filter X` and `P : X → Prop` then
-`∀ᶠ n in F, P n` means that `P n` is eventually true for `n` in `F`. It is defined to be `{ x | P x } ∈ F`.
+`∀ᶠ n in F, P n` means that `P n` is eventually true for `n` in `F`.
+It is defined to be `{ x | P x } ∈ F`.
 
 The following example shows that if `P n` and `Q n` hold for
 sufficiently large `n`, then so does `P n ∧ Q n`.
@@ -192,8 +207,19 @@ section Topology
 
 /- Let's look at the definition of topological space. -/
 
-variable {X : Type _} [TopologicalSpace X]
-variable {Y : Type _} [TopologicalSpace Y]
+variable {X : Type*} [TopologicalSpace X]
+variable {Y : Type*} [TopologicalSpace Y]
+
+
+example {ι : Type*} (s : ι → Set X) :
+    interior (⋂ i, s i) ⊆ ⋂ i, interior (s i) := by {
+  intro x hx
+  simp
+  intro i
+  apply interior_mono ?_ hx
+  exact iInter_subset (fun i ↦ s i) i
+}
+
 
 /- A map between topological spaces is continuous if the
 preimages of open sets are open. -/
@@ -226,10 +252,8 @@ example {x : X} {s : Set X} :
 
 example {x : X} {s : Set X} (h : s ∈ 𝓝 x) : x ∈ s := by
   rw [mem_nhds_iff] at h
-  rcases h with ⟨t, hts, ht, hxt⟩
+  obtain ⟨t, hts, ht, hxt⟩ := h
   exact hts hxt
-
-
 
 
 
@@ -269,6 +293,8 @@ example {K : Set X} : IsCompact K ↔ ∀ {ι : Type _}
     ∃ t : Finset ι, K ⊆ ⋃ i ∈ t, U i := by
   exact?
 
+#check CompactSpace
+
 /-
 This can also be reformulated using filters.
 * `NeBot F` iff `F ≠ ⊥` iff `∅ ∉ F`
@@ -281,7 +307,7 @@ This can also be reformulated using filters.
 example (F : Filter X) : NeBot F ↔ F ≠ ⊥ := by
   exact?
 
-example (F : Filter X) :
+example {x : X} (F : Filter X) :
     ClusterPt x F ↔ NeBot (𝓝 x ⊓ F) := by
   rfl
 
@@ -306,7 +332,7 @@ end Topology
 
 section Metric
 
-variable {X Y : Type _} [MetricSpace X] [MetricSpace Y]
+variable {X Y : Type*} [MetricSpace X] [MetricSpace Y]
 
 /- A metric space is a type `X` equipped with a distance function `dist : X → X → ℝ` with the following properties. -/
 
@@ -334,4 +360,139 @@ example (s : Set X) :
 
 end Metric
 
-end TopologySession
+
+
+
+/- # Exercises
+
+The goal of these exercise is to prove that
+the regular open sets in a topological space form a complete boolean algebra.
+`U ⊔ V` is given by `interior (closure (U ∪ V))`.
+`U ⊓ V` is given by `U ∩ V`. -/
+
+
+variable {X : Type*} [TopologicalSpace X]
+
+variable (X) in
+structure RegularOpens where
+  carrier : Set X
+  isOpen : IsOpen carrier
+  regular' : interior (closure carrier) = carrier
+
+namespace RegularOpens
+
+/- We write some lemmas so that we can easily reason about regular open sets. -/
+variable {U V : RegularOpens X}
+
+instance : SetLike (RegularOpens X) X where
+  coe := RegularOpens.carrier
+  coe_injective' := fun ⟨_, _, _⟩ ⟨_, _, _⟩ _ => by congr
+
+theorem le_def {U V : RegularOpens X} : U ≤ V ↔ (U : Set X) ⊆ (V : Set X) := by simp
+@[simp] theorem regular {U : RegularOpens X} : interior (closure (U : Set X)) = U := U.regular'
+
+@[simp] theorem carrier_eq_coe (U : RegularOpens X) : U.1 = ↑U := rfl
+
+@[ext] theorem ext (h : (U : Set X) = V) : U = V :=
+  SetLike.coe_injective h
+
+
+/- First we want a complete lattice structure on the regular open sets.
+We can obtain this from a so-called `GaloisCoinsertion` with the closed sets.
+This is a pair of maps
+* `l : RegularOpens X → Closeds X`
+* `r : Closeds X → RegularOpens X`
+with the properties that
+* for any `U : RegularOpens X` and `C : Closeds X` we have `l U ≤ C ↔ U ≤ r U`
+* `r ∘ l = id`
+If you know category theory, this is an *adjunction* between orders
+(or more precisely, a coreflection).
+-/
+
+/- The closure of a regular open set. Of course mathlib knows that the closure of a set is closed.
+(the `simps` attribute will automatically generate the simp-lemma for you that
+`(U.cl : Set X) = closure (U : Set X)`
+-/
+@[simps]
+def cl (U : RegularOpens X) : Closeds X :=
+  ⟨closure U, sorry⟩
+
+/- The interior of a closed set. You will have to prove yourself that it is regular open. -/
+@[simps]
+def _root_.TopologicalSpace.Closeds.int (C : Closeds X) : RegularOpens X :=
+  ⟨interior C, sorry, sorry⟩
+
+/- Now let's show the relation between these two operations. -/
+lemma cl_le_iff {U : RegularOpens X} {C : Closeds X} :
+    U.cl ≤ C ↔ U ≤ C.int := by sorry
+
+@[simp] lemma cl_int : U.cl.int = U := by sorry
+
+/- This gives us a GaloisCoinsertion. -/
+
+def gi : GaloisCoinsertion cl (fun C : Closeds X ↦ C.int) where
+  gc U C := cl_le_iff
+  u_l_le U := by simp
+  choice C hC := C.int
+  choice_eq C hC := rfl
+
+/- It is now a general theorem that we can lift the complete lattice structure from `Closeds X`
+to `RegularOpens X`. The lemmas below give the definitions of the lattice operations. -/
+
+instance completeLattice : CompleteLattice (RegularOpens X) :=
+  GaloisCoinsertion.liftCompleteLattice gi
+
+@[simp] lemma coe_inf {U V : RegularOpens X} : ↑(U ⊓ V) = (U : Set X) ∩ V := by
+  have : U ⊓ V = (U.cl ⊓ V.cl).int := rfl
+  simp [this]
+
+@[simp] lemma coe_sup {U V : RegularOpens X} : ↑(U ⊔ V) = interior (closure ((U : Set X) ∪ V)) := by
+  have : U ⊔ V = (U.cl ⊔ V.cl).int := rfl
+  simp [this]
+
+@[simp] lemma coe_top : ((⊤ : RegularOpens X) : Set X) = univ := by
+  have : (⊤ : RegularOpens X) = (⊤ : Closeds X).int := rfl
+  simp [this]
+
+@[simp] lemma coe_bot : ((⊥ : RegularOpens X) : Set X) = ∅ := by
+  have : (⊥ : RegularOpens X) = (⊥ : Closeds X).int := rfl
+  simp [this]
+
+@[simp] lemma coe_sInf {U : Set (RegularOpens X)} :
+    ((sInf U : RegularOpens X) : Set X) =
+    interior (⋂₀ ((fun u : RegularOpens X ↦ closure u) '' U)) := by
+  have : sInf U = (sInf (cl '' U)).int := rfl
+  simp [this]
+
+@[simp] lemma Closeds.coe_sSup {C : Set (Closeds X)} : ((sSup C : Closeds X) : Set X) =
+    closure (⋃₀ ((↑) '' C)) := by
+  have : sSup C = Closeds.closure (sSup ((↑) '' C)) := rfl
+  simp [this]; rfl
+
+@[simp] lemma coe_sSup {U : Set (RegularOpens X)} :
+    ((sSup U : RegularOpens X) : Set X) =
+    interior (closure (⋃₀ ((fun u : RegularOpens X ↦ closure u) '' U))) := by
+  have : sSup U = (sSup (cl '' U)).int := rfl
+  simp [this]
+
+/- We still have to prove that this gives a distributive lattice.
+Note: these are hard; you might want to do the next exercises first. -/
+instance completeDistribLattice : CompleteDistribLattice (RegularOpens X) :=
+  { completeLattice with
+    inf_sSup_le_iSup_inf := by sorry
+    iInf_sup_le_sup_sInf := by sorry
+    }
+
+
+instance : HasCompl (RegularOpens X) := sorry
+
+
+@[simp]
+lemma coe_compl (U : RegularOpens X) : ↑Uᶜ = interior (U : Set X)ᶜ := by sorry
+
+
+instance : CompleteBooleanAlgebra (RegularOpens X) :=
+  { completeDistribLattice,
+    inferInstanceAs (DistribLattice (RegularOpens X)) with
+    inf_compl_le_bot := by sorry
+    top_le_sup_compl := by sorry }

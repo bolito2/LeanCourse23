@@ -1,14 +1,21 @@
 import Lake
 open Lake DSL
 
-package «leanCourse» {
-  -- add any package configuration options here
-}
+def moreServerArgs := #[
+  "-Dpp.unicode.fun=true", -- pretty-prints `fun a ↦ b`
+  "-DautoImplicit=false",
+  "-DrelaxedAutoImplicit=false"
+]
+
+-- These settings only apply during `lake build`, but not in VSCode editor.
+def moreLeanArgs := moreServerArgs
+
+package «leanCourse» where
+  moreServerArgs := moreServerArgs
 
 require mathlib from git
-  "https://github.com/leanprover-community/mathlib4.git"@"2b8dea43f8493550f0b20b7a4ec73287de62ba51"
+  "https://github.com/leanprover-community/mathlib4.git"@"v4.2.0"
 
 @[default_target]
-lean_lib «LeanCourse» {
-  -- add any library configuration options here
-}
+lean_lib «LeanCourse» where
+  moreLeanArgs := moreLeanArgs
