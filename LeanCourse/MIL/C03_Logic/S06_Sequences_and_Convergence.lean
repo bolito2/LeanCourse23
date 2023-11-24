@@ -35,7 +35,30 @@ theorem convergesTo_add {s t : ℕ → ℝ} {a b : ℝ}
   rcases cs (ε / 2) ε2pos with ⟨Ns, hs⟩
   rcases ct (ε / 2) ε2pos with ⟨Nt, ht⟩
   use max Ns Nt
-  sorry
+  intro n h
+  have h1 : |s n - a| < ε / 2 := by
+    apply hs n
+    apply ge_trans
+    exact h
+    apply le_max_left
+
+  have h2 : |t n - b| < ε / 2 := by
+    apply ht n
+    apply ge_trans
+    exact h
+    apply le_max_right
+
+  have h3 : |s n + t n - (a + b)| ≤ |s n - a| + |t n - b| := by
+    have : |s n + t n - (a + b)| = |(s n - a) + (t n - b)| := by ring
+    rw [this]
+    apply abs_add
+  have h4 : |s n - a| + |t n - b| < ε := by
+    have : ε = ε / 2 + ε / 2 := by ring
+    rw [this]
+    apply add_lt_add
+    exact h1
+    exact h2
+  apply lt_of_le_of_lt h3 h4
 
 theorem convergesTo_mul_const {s : ℕ → ℝ} {a : ℝ} (c : ℝ) (cs : ConvergesTo s a) :
     ConvergesTo (fun n ↦ c * s n) (c * a) := by
