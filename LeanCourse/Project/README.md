@@ -2,8 +2,8 @@
 
 Please fill out the following:
 ```
-First & last name:
-Uni-ID:
+First & last name: Óscar Álvarez Sánchez
+Uni-ID: 50057182
 ```
 
 ## Your own project

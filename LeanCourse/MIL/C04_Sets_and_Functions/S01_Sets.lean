@@ -48,7 +48,16 @@ example : s ∩ (t ∪ u) ⊆ s ∩ t ∪ s ∩ u := by
   . right; exact ⟨xs, xu⟩
 
 example : s ∩ t ∪ s ∩ u ⊆ s ∩ (t ∪ u) := by
-  sorry
+  rintro x (⟨xs, xt⟩ | ⟨ xs, xu⟩ )
+  constructor
+  exact xs
+  left
+  exact xt
+  constructor
+  exact xs
+  right
+  exact xu
+
 example : (s \ t) \ u ⊆ s \ (t ∪ u) := by
   intro x xstu
   have xs : x ∈ s := xstu.1.1
@@ -68,7 +77,18 @@ example : (s \ t) \ u ⊆ s \ (t ∪ u) := by
   rintro (xt | xu) <;> contradiction
 
 example : s \ (t ∪ u) ⊆ (s \ t) \ u := by
-  sorry
+  rintro x ⟨ xs, xntu⟩
+  constructor
+  constructor
+  exact xs
+  intro h
+  apply xntu
+  left
+  exact h
+  intro h
+  apply xntu
+  right
+  exact h
 example : s ∩ t = t ∩ s := by
   ext x
   simp only [mem_inter_iff]
@@ -86,10 +106,16 @@ example : s ∩ t = t ∩ s := by
   · rintro x ⟨xs, xt⟩; exact ⟨xt, xs⟩
   . rintro x ⟨xt, xs⟩; exact ⟨xs, xt⟩
 
-example : s ∩ t = t ∩ s :=
-    Subset.antisymm sorry sorry
 example : s ∩ (s ∪ t) = s := by
-  sorry
+  ext x
+  constructor
+  intro h
+  exact h.1
+  intro h
+  constructor
+  exact h
+  left
+  exact h
 
 example : s ∪ s ∩ t = s := by
   sorry
@@ -119,7 +145,16 @@ example (x : ℕ) : x ∈ (univ : Set ℕ) :=
   trivial
 
 example : { n | Nat.Prime n } ∩ { n | n > 2 } ⊆ { n | ¬Even n } := by
-  sorry
+  rintro n ⟨h1,h2⟩
+  dsimp at h1
+  dsimp at h2
+  dsimp
+  rw[Nat.even_iff]
+  intro h
+  have : n = 2 ∨ n % 2 = 1 := Nat.Prime.eq_two_or_odd h1
+  rcases this with g1 | g2
+  linarith
+  linarith
 
 #print Prime
 
