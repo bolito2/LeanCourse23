@@ -84,7 +84,15 @@ example (h : Injective f) : f '' s ∩ f '' t ⊆ f '' (s ∩ t) := by
   sorry
 
 example : f '' s \ f '' t ⊆ f '' (s \ t) := by
-  sorry
+  rintro y ⟨yfs, ynft⟩
+  rcases yfs with ⟨x, xs, fxy⟩
+  have : x ∈ s \ t := by
+    constructor
+    exact xs
+    intro h
+    apply ynft
+    use x
+  use x
 
 example : f ⁻¹' u \ f ⁻¹' v ⊆ f ⁻¹' (u \ v) := by
   sorry
@@ -166,16 +174,55 @@ example : range exp = { y | y > 0 } := by
   rw [exp_log ypos]
 
 example : InjOn sqrt { x | x ≥ 0 } := by
-  sorry
+  intro x xpos y ypos
+  intro h
+  calc
+    x = (sqrt x)^2 := by rw[sq_sqrt xpos]
+    _ = (sqrt y)^2 := by rw[h]
+    _ = y := by rw[sq_sqrt ypos]
 
 example : InjOn (fun x ↦ x ^ 2) { x : ℝ | x ≥ 0 } := by
-  sorry
+  intro x xpos y ypos
+  intro h
+  dsimp at h
+  calc
+    x = sqrt (x^2) := by rw[sqrt_sq xpos]
+    _ = sqrt (y^2) := by rw[h]
+    _ = y := by rw[sqrt_sq ypos]
 
 example : sqrt '' { x | x ≥ 0 } = { y | y ≥ 0 } := by
-  sorry
+  ext y
+  constructor
+  rintro ⟨x, xpos, sxy⟩
+  dsimp
+  dsimp at xpos
+  rw[← sxy]
+  rcases lt_or_eq_of_le xpos with h|h
+  apply le_of_lt
+  apply sqrt_pos.2 h
+  rw[← h]
+  rw[sqrt_zero]
+  intro ypos
+  dsimp at ypos
+  use y^2
+  constructor
+  dsimp
+  exact sq_nonneg y
+  exact sqrt_sq ypos
 
 example : (range fun x ↦ x ^ 2) = { y : ℝ | y ≥ 0 } := by
-  sorry
+  ext y
+  constructor
+  rintro ⟨x, xsqy⟩
+  dsimp at xsqy
+  dsimp
+  rw[← xsqy]
+  exact sq_nonneg x
+  intro h
+  dsimp at h
+  use sqrt y
+  dsimp
+  exact sq_sqrt h
 
 end
 
@@ -206,12 +253,30 @@ variable (f : α → β)
 
 open Function
 
-example : Injective f ↔ LeftInverse (inverse f) f :=
-  sorry
+example : Injective f ↔ LeftInverse (inverse f) f := by
+  constructor
+  intro h x
+  have : f (inverse f (f x)) = f x := by
+    apply inverse_spec
+    use x
+  apply h this
+  intro h x y fxfy
+  have : inverse f (f x) = inverse f (f y) := by
+    rw[fxfy]
 
-example : Surjective f ↔ RightInverse (inverse f) f :=
-  sorry
+  rw[h] at this
+  rw[h] at this
+  exact this
 
+example : Surjective f ↔ RightInverse (inverse f) f := by
+  constructor
+  intro h y
+  rw[Surjective] at h
+  have yim : ∃x, f x = y := h y
+  exact inverse_spec y yim
+  intro h y
+  use inverse f y
+  apply h
 end
 
 section
@@ -226,10 +291,10 @@ theorem Cantor : ∀ f : α → Set α, ¬Surjective f := by
     intro h'
     have : j ∉ f j := by rwa [h] at h'
     contradiction
-  have h₂ : j ∈ S
-  sorry
-  have h₃ : j ∉ S
-  sorry
+  have h₂ : j ∈ S := h₁
+  have h₃ : j ∉ S := by
+    rw[h] at h₁
+    exact h₁
   contradiction
 
 -- COMMENTS: TODO: improve this
