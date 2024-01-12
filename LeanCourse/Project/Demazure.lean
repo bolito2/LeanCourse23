@@ -56,6 +56,13 @@ SwapVariables (SwapVariables p i j) i j = p := by
   apply MvPolynomial.rename_id
 
 
+lemma zero_of_swap_variables_zero (i : Fin n) (j : Fin n) : SwapVariables 0 i j = 0 := by
+  rw[SwapVariables]
+  have : (0 : MvPolynomial (Fin n) ℂ) = C 0 := by
+    refine C_0.symm
+  rw[this]
+  exact rename_C (Transposition i j) 0
+
 lemma i_le_nsucc_of_i_le_n (i : ℕ) (h : i < n) : i < n + 1 := by
   have : n < n + 1 := by
       nth_rewrite 1 [← Nat.add_zero n]
@@ -107,3 +114,5 @@ lemma demazure_is_polynomial : ∀(i : ℕ) (h : i < n), ∀(p : MvPolynomial (F
       sorry
 
     rw[swappy]
+    rw[zero_of_swap_variables_zero]
+    rw[MvPolynomial.finSuccEquiv_zero]
