@@ -20,7 +20,7 @@ example : circleEquation = SwapVariables circleEquation 0 1 := by
   simp [circleEquation, SwapVariables, Transposition]
   ring
 
-lemma Transposition_order_two (i : Fin n) (j : Fin n) : Transposition i j ∘ Transposition i j = (fun k ↦ k) := by
+lemma transposition_order_two (i : Fin n) (j : Fin n) : Transposition i j ∘ Transposition i j = (fun k ↦ k) := by
   simp[Transposition]
   funext k
   unfold Function.comp
@@ -47,12 +47,12 @@ lemma Transposition_order_two (i : Fin n) (j : Fin n) : Transposition i j ∘ Tr
   rw[if_neg k_ne_j, if_neg k_ne_i, if_neg k_ne_j]
 
 
-example yeh (p : MvPolynomial (Fin n) ℂ) (i : Fin n) (j : Fin n) :
+lemma swap_variables_order_two (p : MvPolynomial (Fin n) ℂ) (i : Fin n) (j : Fin n) :
 SwapVariables (SwapVariables p i j) i j = p := by
   simp[SwapVariables]
-  sorry
+  rw[transposition_order_two]
+  apply MvPolynomial.rename_id
 
-#check IsLocalization.mk' (FractionRing (MvPolynomial (Fin n) ℂ))
 
 noncomputable def Demazure (p : MvPolynomial (Fin (n + 1)) ℂ) (i : ℕ) (h : i < n) : MvPolynomial (Fin (n + 1)) ℂ  :=
   have : i < n + 1 := by
@@ -80,6 +80,8 @@ noncomputable def Demazure (p : MvPolynomial (Fin (n + 1)) ℂ) (i : ℕ) (h : i
   let division_mv := (finSuccEquiv ℂ n).invFun division
 
   SwapVariables division_mv i' n
+
+
 
 lemma wario :  2 > 0 := by norm_num
 lemma wah :  0 < 2 - 1 := by norm_num
