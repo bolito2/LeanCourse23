@@ -9,7 +9,7 @@ open MvPolynomial
 variable {n : ℕ} (n_pos : n > 0)
 
 def Transposition (i : Fin n)(j : Fin n) : (Fin n → Fin n) :=
-  λ k => if k = i then j else if k = j then i else k
+  fun k ↦ if k = i then j else if k = j then i else k
 
 noncomputable def SwapVariables (p : MvPolynomial (Fin n) ℂ) (i : Fin n) (j : Fin n) : MvPolynomial (Fin n) ℂ :=
   (rename (Transposition i j)) p
@@ -20,29 +20,66 @@ example : circleEquation = SwapVariables circleEquation 0 1 := by
   simp [circleEquation, SwapVariables, Transposition]
   ring
 
+lemma Transposition_order_two (i : Fin n) (j : Fin n) : Transposition i j ∘ Transposition i j = (fun k ↦ k) := by
+  simp[Transposition]
+  funext k
+  unfold Function.comp
+
+  dsimp
+  rcases eq_or_ne j i with i_eq_j | i_ne_j
+
+  rcases eq_or_ne k i with k_eq_i | k_ne_i
+  rw[if_pos k_eq_i, if_pos rfl, if_pos i_eq_j, i_eq_j, ← k_eq_i]
+
+  rw[if_neg k_ne_i]
+  rw[← i_eq_j] at k_ne_i
+  rw[if_neg k_ne_i, if_neg k_ne_i, if_neg]
+  rw[← i_eq_j]
+  exact k_ne_i
+
+  rcases eq_or_ne k i with k_eq_i | k_ne_i
+  rw[if_pos k_eq_i, if_neg i_ne_j, if_pos rfl]
+  rw[k_eq_i]
+  rw[if_neg k_ne_i]
+
+  rcases eq_or_ne k j with k_eq_j | k_ne_j
+  rw[if_pos k_eq_j, if_pos rfl, k_eq_j]
+  rw[if_neg k_ne_j, if_neg k_ne_i, if_neg k_ne_j]
+
+
+example yeh (p : MvPolynomial (Fin n) ℂ) (i : Fin n) (j : Fin n) :
+SwapVariables (SwapVariables p i j) i j = p := by
+  simp[SwapVariables]
+  sorry
+
 #check IsLocalization.mk' (FractionRing (MvPolynomial (Fin n) ℂ))
 
-noncomputable def Demazure (p : MvPolynomial (Fin n) ℂ) (i : Fin n) (h : i < n - 1) : FractionRing (MvPolynomial (Fin n) ℂ)  :=
-  have : i < n := by
-    have : n - 1 < n := by
-      apply Nat.sub_lt
-      apply n_pos
-      apply Nat.le_refl
-    apply Nat.lt_trans h this
+noncomputable def Demazure (p : MvPolynomial (Fin (n + 1)) ℂ) (i : ℕ) (h : i < n) : MvPolynomial (Fin (n + 1)) ℂ  :=
+  have : i < n + 1 := by
+    have : n < n + 1 := by
+      nth_rewrite 1 [← Nat.add_zero n]
+      apply Nat.add_lt_add_left
+      norm_num
+    apply Nat.lt_trans h
+    apply this
 
-  let i' : Fin n := ⟨i, this⟩
+  let i' : Fin (n + 1) := ⟨i, this⟩
 
-  have h' : i + 1 < n := by
-    apply Nat.add_lt_of_lt_sub h
+  have h' : i + 1 < n + 1 := by
+    apply Nat.add_lt_add_right h
 
-  let i'_plus_1 : Fin n := ⟨i + 1, h'⟩
-  let numerator := (p - SwapVariables p i' i'_plus_1)
-  let denominator : (MvPolynomial (Fin n) ℂ) := (X i' - X i'_plus_1)
+  let i'_plus_1 : Fin (n + 1) := ⟨i + 1, h'⟩
+  let numerator := - (p - SwapVariables p i' i'_plus_1)
+  let numerator_Xi_on_end := SwapVariables numerator i' n
+  let numerator_X := (finSuccEquiv ℂ n).toFun numerator_Xi_on_end
 
-  let numerator_in_frac := algebraMap (MvPolynomial (Fin n) ℂ) (FractionRing (MvPolynomial (Fin n) ℂ)) numerator
-  let denominator_in_frac := algebraMap (MvPolynomial (Fin n) ℂ) (FractionRing (MvPolynomial (Fin n) ℂ)) denominator
+  let X_i : MvPolynomial (Fin n) ℂ := MvPolynomial.X ⟨i, h⟩
+  let denominator_X : Polynomial (MvPolynomial (Fin n) ℂ) := (Polynomial.X - Polynomial.C X_i)
 
-  numerator_in_frac / denominator_in_frac
+  let division := numerator_X.divByMonic denominator_X
+  let division_mv := (finSuccEquiv ℂ n).invFun division
+
+  SwapVariables division_mv i' n
 
 lemma wario :  2 > 0 := by norm_num
 lemma wah :  0 < 2 - 1 := by norm_num
