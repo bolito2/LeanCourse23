@@ -3,18 +3,20 @@ import Mathlib.Data.Set.Function
 import Mathlib.Analysis.Complex.Polynomial
 import Init.System.IO
 
-section
+noncomputable section
 open MvPolynomial
 
 variable {n : ℕ} (n_pos : n > 0)
 
+/- TODO: Use mathlib's permutations -/
+
 def Transposition (i : Fin n)(j : Fin n) : (Fin n → Fin n) :=
   fun k ↦ if k = i then j else if k = j then i else k
 
-noncomputable def SwapVariables (p : MvPolynomial (Fin n) ℂ) (i : Fin n) (j : Fin n) : MvPolynomial (Fin n) ℂ :=
+def SwapVariables (p : MvPolynomial (Fin n) ℂ) (i : Fin n) (j : Fin n) : MvPolynomial (Fin n) ℂ :=
   (rename (Transposition i j)) p
 
-noncomputable def circleEquation : MvPolynomial (Fin 2) ℂ := X 0 ^ 2 + X 1 ^ 2 - 1
+def circleEquation : MvPolynomial (Fin 2) ℂ := X 0 ^ 2 + X 1 ^ 2 - 1
 
 example : circleEquation = SwapVariables circleEquation 0 1 := by
   simp [circleEquation, SwapVariables, Transposition]
@@ -54,39 +56,54 @@ SwapVariables (SwapVariables p i j) i j = p := by
   apply MvPolynomial.rename_id
 
 
-noncomputable def Demazure (p : MvPolynomial (Fin (n + 1)) ℂ) (i : ℕ) (h : i < n) : MvPolynomial (Fin (n + 1)) ℂ  :=
-  have : i < n + 1 := by
-    have : n < n + 1 := by
+lemma i_le_nsucc_of_i_le_n (i : ℕ) (h : i < n) : i < n + 1 := by
+  have : n < n + 1 := by
       nth_rewrite 1 [← Nat.add_zero n]
       apply Nat.add_lt_add_left
       norm_num
-    apply Nat.lt_trans h
-    apply this
+  apply Nat.lt_trans h
+  apply this
 
-  let i' : Fin (n + 1) := ⟨i, this⟩
+def DemazureNumerator (p : MvPolynomial (Fin (n + 1)) ℂ) (i : ℕ) (h : i < n) : Polynomial (MvPolynomial (Fin n) ℂ)  :=
+  let i' : Fin (n + 1) := ⟨i, i_le_nsucc_of_i_le_n i h⟩
 
   have h' : i + 1 < n + 1 := by
     apply Nat.add_lt_add_right h
 
   let i'_plus_1 : Fin (n + 1) := ⟨i + 1, h'⟩
+
   let numerator := - (p - SwapVariables p i' i'_plus_1)
-  let numerator_Xi_on_end := SwapVariables numerator i' n
-  let numerator_X := (finSuccEquiv ℂ n).toFun numerator_Xi_on_end
+  let numerator_X_i_succ_on_end := SwapVariables numerator i'_plus_1 n
+  (finSuccEquiv ℂ n).toFun numerator_X_i_succ_on_end
+
+def DemazureDenominator (p : MvPolynomial (Fin (n + 1)) ℂ) (i : ℕ) (h : i < n) : Polynomial (MvPolynomial (Fin n) ℂ)  :=
+  have h' : i + 1 < n + 1 := by
+    apply Nat.add_lt_add_right h
 
   let X_i : MvPolynomial (Fin n) ℂ := MvPolynomial.X ⟨i, h⟩
   let denominator_X : Polynomial (MvPolynomial (Fin n) ℂ) := (Polynomial.X - Polynomial.C X_i)
 
-  let division := numerator_X.divByMonic denominator_X
-  let division_mv := (finSuccEquiv ℂ n).invFun division
+  denominator_X
 
-  SwapVariables division_mv i' n
+noncomputable def Demazure (p : MvPolynomial (Fin (n + 1)) ℂ) (i : ℕ) (h : i < n) : MvPolynomial (Fin (n + 1)) ℂ  :=
+
+let numerator := DemazureNumerator p i h
+let denominator := DemazureDenominator p i h
+
+let division := numerator.divByMonic denominator
+let division_mv := (finSuccEquiv ℂ n).invFun division
+
+let i' : Fin (n + 1) := ⟨i, i_le_nsucc_of_i_le_n i h⟩
+
+SwapVariables division_mv i' n
 
 
+lemma demazure_is_polynomial : ∀(i : ℕ) (h : i < n), ∀(p : MvPolynomial (Fin (n + 1)) ℂ),
+  (DemazureNumerator p i h).modByMonic (DemazureDenominator p i h) = 0 := by
+    intro i h p
+    simp[DemazureDenominator, DemazureNumerator]
 
-lemma wario :  2 > 0 := by norm_num
-lemma wah :  0 < 2 - 1 := by norm_num
+    have swappy : SwapVariables p { val := i, isLt := i_le_nsucc_of_i_le_n i h } { val := i + 1, isLt := Nat.add_lt_add_right h 1 } - p = 0 := by
+      sorry
 
-noncomputable def waluigi : FractionRing (MvPolynomial (Fin 2) ℂ ) := Demazure wario circleEquation 0 wah
-example : waluigi = 0 := by
-  simp [waluigi, Demazure, circleEquation, SwapVariables, Transposition]
-  sorry
+    rw[swappy]
