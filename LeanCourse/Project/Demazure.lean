@@ -81,7 +81,8 @@ def DemazureNumerator (p : MvPolynomial (Fin (n + 1)) ℂ) (i : ℕ) (h : i < n)
 
   let numerator := - (p - SwapVariables p i' i'_plus_1)
   let numerator_X_i_succ_on_end := SwapVariables numerator i'_plus_1 n
-  (finSuccEquiv ℂ n).toFun numerator_X_i_succ_on_end
+  (finSuccEquiv ℂ n) numerator_X_i_succ_on_end
+
 
 def DemazureDenominator (p : MvPolynomial (Fin (n + 1)) ℂ) (i : ℕ) (h : i < n) : Polynomial (MvPolynomial (Fin n) ℂ)  :=
   have h' : i + 1 < n + 1 := by
@@ -94,25 +95,27 @@ def DemazureDenominator (p : MvPolynomial (Fin (n + 1)) ℂ) (i : ℕ) (h : i < 
 
 noncomputable def Demazure (p : MvPolynomial (Fin (n + 1)) ℂ) (i : ℕ) (h : i < n) : MvPolynomial (Fin (n + 1)) ℂ  :=
 
-let numerator := DemazureNumerator p i h
-let denominator := DemazureDenominator p i h
+  let numerator := DemazureNumerator p i h
+  let denominator := DemazureDenominator p i h
 
-let division := numerator.divByMonic denominator
-let division_mv := (finSuccEquiv ℂ n).invFun division
+  let division := numerator.divByMonic denominator
+  let division_mv := (finSuccEquiv ℂ n).invFun division
 
-let i' : Fin (n + 1) := ⟨i, i_le_nsucc_of_i_le_n i h⟩
+  let i' : Fin (n + 1) := ⟨i, i_le_nsucc_of_i_le_n i h⟩
 
-SwapVariables division_mv i' n
-
+  SwapVariables division_mv i' n
 
 lemma demazure_is_polynomial : ∀(i : ℕ) (h : i < n), ∀(p : MvPolynomial (Fin (n + 1)) ℂ),
   (DemazureNumerator p i h).modByMonic (DemazureDenominator p i h) = 0 := by
     intro i h p
-    simp[DemazureDenominator, DemazureNumerator]
+    simp[DemazureDenominator]
 
     have swappy : SwapVariables p { val := i, isLt := i_le_nsucc_of_i_le_n i h } { val := i + 1, isLt := Nat.add_lt_add_right h 1 } - p = 0 := by
       sorry
 
+    simp[DemazureNumerator]
+
     rw[swappy]
     rw[zero_of_swap_variables_zero]
-    rw[MvPolynomial.finSuccEquiv_zero]
+    rw[MvPolynomial.eval₂_zero]
+    rw[Polynomial.eval_zero]
