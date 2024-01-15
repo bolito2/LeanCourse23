@@ -63,59 +63,35 @@ lemma zero_of_swap_variables_zero (i : Fin n) (j : Fin n) : SwapVariables 0 i j 
   rw[this]
   exact rename_C (Transposition i j) 0
 
-lemma i_le_nsucc_of_i_le_n (i : ℕ) (h : i < n) : i < n + 1 := by
-  have : n < n + 1 := by
-      nth_rewrite 1 [← Nat.add_zero n]
-      apply Nat.add_lt_add_left
-      norm_num
-  apply Nat.lt_trans h
-  apply this
+def DemazureNumerator (p : MvPolynomial (Fin (n + 1)) ℂ) (i : Fin n) : Polynomial (MvPolynomial (Fin n) ℂ)  :=
+  let i' : Fin (n + 1) := Fin.castSucc i
 
-def DemazureNumerator (p : MvPolynomial (Fin (n + 1)) ℂ) (i : ℕ) (h : i < n) : Polynomial (MvPolynomial (Fin n) ℂ)  :=
-  let i' : Fin (n + 1) := ⟨i, i_le_nsucc_of_i_le_n i h⟩
-
-  have h' : i + 1 < n + 1 := by
-    apply Nat.add_lt_add_right h
-
-  let i'_plus_1 : Fin (n + 1) := ⟨i + 1, h'⟩
+  let i'_plus_1 : Fin (n + 1) := Fin.succ i
 
   let numerator := - (p - SwapVariables p i' i'_plus_1)
   let numerator_X_i_succ_on_end := SwapVariables numerator i'_plus_1 n
   (finSuccEquiv ℂ n) numerator_X_i_succ_on_end
 
 
-def DemazureDenominator (p : MvPolynomial (Fin (n + 1)) ℂ) (i : ℕ) (h : i < n) : Polynomial (MvPolynomial (Fin n) ℂ)  :=
-  have h' : i + 1 < n + 1 := by
-    apply Nat.add_lt_add_right h
-
-  let X_i : MvPolynomial (Fin n) ℂ := MvPolynomial.X ⟨i, h⟩
+def DemazureDenominator (p : MvPolynomial (Fin (n + 1)) ℂ) (i : Fin n) : Polynomial (MvPolynomial (Fin n) ℂ)  :=
+  let X_i : MvPolynomial (Fin n) ℂ := MvPolynomial.X i
   let denominator_X : Polynomial (MvPolynomial (Fin n) ℂ) := (Polynomial.X - Polynomial.C X_i)
 
   denominator_X
 
-noncomputable def Demazure (p : MvPolynomial (Fin (n + 1)) ℂ) (i : ℕ) (h : i < n) : MvPolynomial (Fin (n + 1)) ℂ  :=
-
-  let numerator := DemazureNumerator p i h
-  let denominator := DemazureDenominator p i h
+noncomputable def Demazure (p : MvPolynomial (Fin (n + 1)) ℂ) (i : Fin n) : MvPolynomial (Fin (n + 1)) ℂ  :=
+  let numerator := DemazureNumerator p i
+  let denominator := DemazureDenominator p i
 
   let division := numerator.divByMonic denominator
   let division_mv := (finSuccEquiv ℂ n).invFun division
 
-  let i' : Fin (n + 1) := ⟨i, i_le_nsucc_of_i_le_n i h⟩
+  let i' : Fin (n + 1) := Fin.castSucc i
 
   SwapVariables division_mv i' n
 
-lemma demazure_is_polynomial : ∀(i : ℕ) (h : i < n), ∀(p : MvPolynomial (Fin (n + 1)) ℂ),
-  (DemazureNumerator p i h).modByMonic (DemazureDenominator p i h) = 0 := by
-    intro i h p
-    simp[DemazureDenominator]
-
-    have swappy : SwapVariables p { val := i, isLt := i_le_nsucc_of_i_le_n i h } { val := i + 1, isLt := Nat.add_lt_add_right h 1 } - p = 0 := by
-      sorry
-
-    simp[DemazureNumerator]
-
-    rw[swappy]
-    rw[zero_of_swap_variables_zero]
-    rw[MvPolynomial.eval₂_zero]
-    rw[Polynomial.eval_zero]
+lemma demazure_is_polynomial : ∀(i : Fin n), ∀(p : MvPolynomial (Fin (n + 1)) ℂ),
+  (DemazureNumerator p i).modByMonic (DemazureDenominator p i) = 0 := by
+    intro i p
+    simp[DemazureDenominator, DemazureNumerator]
+    sorry
