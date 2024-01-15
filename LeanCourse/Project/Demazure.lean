@@ -29,6 +29,7 @@ example : circleEquation = SwapVariables circleEquation 0 1 := by
   simp [circleEquation, SwapVariables, Transposition]
   ring
 
+
 lemma transposition_order_two (i : Fin n) (j : Fin n) : Transposition i j ∘ Transposition i j = (fun k ↦ k) := by
   simp[Transposition]
   funext k
@@ -72,12 +73,11 @@ lemma zero_of_swap_variables_zero (i : Fin n) (j : Fin n) : SwapVariables 0 i j 
 
 def DemazureNumerator (p : MvPolynomial (Fin (n + 1)) ℂ) (i : Fin n) : Polynomial (MvPolynomial (Fin n) ℂ)  :=
   let i' : Fin (n + 1) := Fin.castSucc i
-
   let i'_plus_1 : Fin (n + 1) := Fin.succ i
 
-  let numerator := - (p - SwapVariables p i' i'_plus_1)
-  let numerator_X_i_succ_on_end := SwapVariables numerator i'_plus_1 n
-  (finSuccEquiv ℂ n) numerator_X_i_succ_on_end
+  let numerator := p - SwapVariables p i' i'_plus_1
+  let numerator_X_i_at_start := SwapVariables numerator i' 0
+  (finSuccEquiv ℂ n) numerator_X_i_at_start
 
 
 def DemazureDenominator (p : MvPolynomial (Fin (n + 1)) ℂ) (i : Fin n) : Polynomial (MvPolynomial (Fin n) ℂ)  :=
@@ -107,6 +107,11 @@ lemma wah :  ∀(i : Fin n), ∀(p : MvPolynomial (Fin (n + 1)) ℂ),
     simp[DemazureNumeratorHom, DemazureDenominator]
     sorry
 
+lemma fin_succ_ne_fin_castSucc (i : Fin n) : ¬Fin.succ i = Fin.castSucc i := by
+  apply Fin.val_ne_iff.mp
+  dsimp
+  norm_num
+
 lemma demazure_is_polynomial : ∀(i : Fin n), ∀(p : MvPolynomial (Fin (n + 1)) ℂ),
   (DemazureNumerator p i).modByMonic (DemazureDenominator p i) = 0 := by
     intro i p
@@ -117,5 +122,39 @@ lemma demazure_is_polynomial : ∀(i : Fin n), ∀(p : MvPolynomial (Fin (n + 1)
       rw[MvPolynomial.eval₂_rename]
     apply sub_eq_zero_of_eq
     apply MvPolynomial.eval₂_congr
-    intro i c h coeff_ne_zero
+    intro j c h coeff_ne_zero
+
+    dsimp
+    rcases eq_or_ne j i with j_eq_i | j_neq_i
+    rw [j_eq_i]
+
+    simp[Transposition]
+    rw[if_neg, if_neg]
+    simp[Fin.cases]
+    exact Fin.succ_ne_zero i
+    apply fin_succ_ne_fin_castSucc
+
+    rcases eq_or_ne j (i + 1) with j_eq_i_succ | j_ne_i_succ
+    rw[j_eq_i_succ]
+
+    simp[Transposition]
+    rw[if_neg, if_neg]
+    simp[Fin.cases]
+    exact Fin.succ_ne_zero i
+    apply fin_succ_ne_fin_castSucc
+
+    rcases eq_or_ne j 0 with j_eq_zero | j_ne_zero
+    rw[j_eq_zero]
+
+    simp[Transposition]
+
+    rcases eq_or_ne (0 : Fin (n + 1)) (Fin.castSucc i) with i_eq_zero | i_ne_zero
+    rw[if_pos i_eq_zero, if_pos i_eq_zero, if_neg, if_neg]
+    simp[Fin.cases]
+    exact Fin.succ_ne_zero i
+    apply fin_succ_ne_fin_castSucc
+
+    repeat rw[if_neg i_ne_zero]
+    repeat rw[if_neg]
+
     
