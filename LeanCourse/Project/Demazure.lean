@@ -3,6 +3,13 @@ import Mathlib.Data.Set.Function
 import Mathlib.Analysis.Complex.Polynomial
 import Init.System.IO
 
+import Mathlib.Data.Complex.Basic
+
+import Mathlib.Data.Polynomial.Basic
+import Mathlib.Data.MvPolynomial.Basic
+import Mathlib.Data.MvPolynomial.Rename
+import Mathlib.Data.MvPolynomial.Polynomial
+
 noncomputable section
 open MvPolynomial
 
@@ -16,7 +23,7 @@ def Transposition (i : Fin n)(j : Fin n) : (Fin n → Fin n) :=
 def SwapVariables (p : MvPolynomial (Fin n) ℂ) (i : Fin n) (j : Fin n) : MvPolynomial (Fin n) ℂ :=
   (rename (Transposition i j)) p
 
-def circleEquation : MvPolynomial (Fin 2) ℂ := X 0 ^ 2 + X 1 ^ 2 - 1
+def circleEquation : MvPolynomial (Fin 2) ℂ := X 0 ^ 2 + X 1 ^ 2 - C 1
 
 example : circleEquation = SwapVariables circleEquation 0 1 := by
   simp [circleEquation, SwapVariables, Transposition]
@@ -90,8 +97,25 @@ noncomputable def Demazure (p : MvPolynomial (Fin (n + 1)) ℂ) (i : Fin n) : Mv
 
   SwapVariables division_mv i' n
 
+def DemazureNumeratorHom (i : Fin n) : (MvPolynomial (Fin (n + 1)) ℂ) →+* (Polynomial (MvPolynomial (Fin n) ℂ)) :=
+  if i_not_last : i + 1 < n then eval₂Hom (RingHom.comp Polynomial.C C) (fun k ↦ if k_not_last : k.val < n then (if k = i + 1 then Polynomial.X else Polynomial.C (X ⟨k, k_not_last⟩ )) else Polynomial.C (X ⟨i + 1, i_not_last⟩ ))
+  else eval₂Hom (RingHom.comp Polynomial.C C) (fun k ↦ if k_not_last : k.val < n then Polynomial.C (X ⟨k, k_not_last⟩ ) else Polynomial.X)
+
+lemma wah :  ∀(i : Fin n), ∀(p : MvPolynomial (Fin (n + 1)) ℂ),
+  (DemazureNumeratorHom i p).modByMonic (DemazureDenominator p i) = 0 := by
+    intro i p
+    simp[DemazureNumeratorHom, DemazureDenominator]
+    sorry
+
 lemma demazure_is_polynomial : ∀(i : Fin n), ∀(p : MvPolynomial (Fin (n + 1)) ℂ),
   (DemazureNumerator p i).modByMonic (DemazureDenominator p i) = 0 := by
     intro i p
-    simp[DemazureDenominator, DemazureNumerator]
-    sorry
+    simp[DemazureNumerator, DemazureDenominator]
+    rw[MvPolynomial.polynomial_eval_eval₂]
+    simp[SwapVariables]
+    repeat
+      rw[MvPolynomial.eval₂_rename]
+    apply sub_eq_zero_of_eq
+    apply MvPolynomial.eval₂_congr
+    intro i c h coeff_ne_zero
+    
