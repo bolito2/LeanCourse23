@@ -122,10 +122,10 @@ lemma demazure_is_polynomial : ∀(i : Fin n), ∀(p : MvPolynomial (Fin (n + 1)
       rw[MvPolynomial.eval₂_rename]
     apply sub_eq_zero_of_eq
     apply MvPolynomial.eval₂_congr
-    intro j c h coeff_ne_zero
+    intro j c _ _
 
     dsimp
-    rcases eq_or_ne j i with j_eq_i | j_neq_i
+    rcases eq_or_ne j (Fin.castSucc i) with j_eq_i | j_neq_i
     rw [j_eq_i]
 
     simp[Transposition]
@@ -134,7 +134,7 @@ lemma demazure_is_polynomial : ∀(i : Fin n), ∀(p : MvPolynomial (Fin (n + 1)
     exact Fin.succ_ne_zero i
     apply fin_succ_ne_fin_castSucc
 
-    rcases eq_or_ne j (i + 1) with j_eq_i_succ | j_ne_i_succ
+    rcases eq_or_ne j (Fin.succ i) with j_eq_i_succ | j_ne_i_succ
     rw[j_eq_i_succ]
 
     simp[Transposition]
@@ -148,13 +148,25 @@ lemma demazure_is_polynomial : ∀(i : Fin n), ∀(p : MvPolynomial (Fin (n + 1)
 
     simp[Transposition]
 
-    rcases eq_or_ne (0 : Fin (n + 1)) (Fin.castSucc i) with i_eq_zero | i_ne_zero
-    rw[if_pos i_eq_zero, if_pos i_eq_zero, if_neg, if_neg]
-    simp[Fin.cases]
-    exact Fin.succ_ne_zero i
-    apply fin_succ_ne_fin_castSucc
+    have i_ne_zero : (0 : Fin (n + 1)) ≠ (Fin.castSucc i) := by
+      intro h
+      rw[h] at j_eq_zero
+      contradiction
+
+    have zero_ne_succ (i : Fin n) : 0 ≠ Fin.succ i := by
+      exact (bne_iff_ne 0 (Fin.succ i)).mp rfl
 
     repeat rw[if_neg i_ne_zero]
-    repeat rw[if_neg]
 
-    
+    rw[if_neg (zero_ne_succ i)]
+    rw[if_neg i_ne_zero]
+    rw[if_pos]
+    rfl
+
+    simp[Transposition]
+
+    repeat rw[if_neg j_neq_i]
+    repeat rw[if_neg j_ne_i_succ]
+    repeat rw[if_neg j_ne_zero]
+    rw[if_neg j_neq_i]
+
