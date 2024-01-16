@@ -90,7 +90,7 @@ lemma wah :  ∀(i : Fin n), ∀(p : MvPolynomial (Fin (n + 1)) ℂ),
     simp[DemazureNumeratorHom, DemazureDenominator]
     sorry
 
-lemma fin_succ_ne_fin_castSucc (i : Fin n) : ¬Fin.succ i = Fin.castSucc i := by
+lemma fin_succ_ne_fin_castSucc (i : Fin n) : Fin.succ i ≠ Fin.castSucc i := by
   apply Fin.val_ne_iff.mp
   dsimp
   norm_num
@@ -108,47 +108,27 @@ lemma demazure_is_polynomial : ∀(i : Fin n), ∀(p : MvPolynomial (Fin (n + 1)
     intro j c _ _
 
     dsimp
-    rcases eq_or_ne j (Fin.castSucc i) with j_eq_i | j_neq_i
-    rw [j_eq_i]
-
-    simp[Transposition]
-    rw[if_neg, if_neg]
-    simp[Fin.cases]
-    exact Fin.succ_ne_zero i
-    apply fin_succ_ne_fin_castSucc
-
-    rcases eq_or_ne j (Fin.succ i) with j_eq_i_succ | j_ne_i_succ
-    rw[j_eq_i_succ]
-
-    simp[Transposition]
-    rw[if_neg, if_neg]
-    simp[Fin.cases]
-    exact Fin.succ_ne_zero i
-    apply fin_succ_ne_fin_castSucc
-
-    rcases eq_or_ne j 0 with j_eq_zero | j_ne_zero
-    rw[j_eq_zero]
-
     simp[Transposition]
 
-    have i_ne_zero : (0 : Fin (n + 1)) ≠ (Fin.castSucc i) := by
-      intro h
-      rw[h] at j_eq_zero
-      contradiction
 
-    have zero_ne_succ (i : Fin n) : 0 ≠ Fin.succ i := by
-      exact (bne_iff_ne 0 (Fin.succ i)).mp rfl
+    by_cases h1 : j = Fin.castSucc i
+    by_cases h2 : j = Fin.succ i
+    by_cases h3 : j = 0
+    simp[h1,h2,h3, fin_succ_ne_fin_castSucc i, Fin.succ_ne_zero]
+    simp[h1,h2,h3, fin_succ_ne_fin_castSucc i, Fin.succ_ne_zero]
 
-    repeat rw[if_neg i_ne_zero]
+    by_cases h3 : j = 0
+    simp[h1,h2,h3, fin_succ_ne_fin_castSucc i, Fin.succ_ne_zero]
+    simp[h1,h2,h3, fin_succ_ne_fin_castSucc i, Fin.succ_ne_zero]
 
-    rw[if_neg (zero_ne_succ i)]
-    rw[if_neg i_ne_zero]
-    rw[if_pos]
-    rfl
+    by_cases h2 : j = Fin.succ i
+    by_cases h3 : j = 0
 
-    simp[Transposition]
+    simp[h1,h2,h3, fin_succ_ne_fin_castSucc i, Fin.succ_ne_zero]
+    simp[h1,h2,h3, fin_succ_ne_fin_castSucc i, Fin.succ_ne_zero]
 
-    repeat rw[if_neg j_neq_i]
-    repeat rw[if_neg j_ne_i_succ]
-    repeat rw[if_neg j_ne_zero]
-    rw[if_neg j_neq_i]
+    by_cases h3 : j = 0
+    simp[h3] at h1
+    simp[h3] at h2
+    simp[h1,h2,h3, fin_succ_ne_fin_castSucc i, Fin.succ_ne_zero]
+    simp[h1,h2,h3, fin_succ_ne_fin_castSucc i, Fin.succ_ne_zero]
