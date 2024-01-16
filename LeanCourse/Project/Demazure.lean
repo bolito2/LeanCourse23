@@ -82,8 +82,8 @@ def DemazureNumerator (p : MvPolynomial (Fin (n + 1)) ℂ) (i : Fin n) : Polynom
   let i' : Fin (n + 1) := Fin.castSucc i
   let i'_plus_1 : Fin (n + 1) := Fin.succ i
 
-  let numerator := p - SwapVariablesFun i' i'_plus_1 p
-  let numerator_X_i_at_start := SwapVariablesFun i' 0 numerator
+  let numerator := p - SwapVariables i' i'_plus_1 p
+  let numerator_X_i_at_start := SwapVariables i' 0 numerator
   (finSuccEquiv ℂ n) numerator_X_i_at_start
 
 
@@ -114,14 +114,14 @@ lemma demazure_is_polynomial : ∀(i : Fin n), ∀(p : MvPolynomial (Fin (n + 1)
     intro i p
     simp[DemazureNumerator, DemazureDenominator]
 
-    rw[MvPolynomial.polynomial_eval_eval₂]
-    simp[SwapVariablesFun]
+    simp[MvPolynomial.polynomial_eval_eval₂]
+    simp[SwapVariables, SwapVariablesFun]
 
     repeat
       rw[MvPolynomial.eval₂_rename]
 
     apply sub_eq_zero_of_eq
-
+    apply congr_arg
 
     apply MvPolynomial.eval₂_congr
     intro j c _ _
