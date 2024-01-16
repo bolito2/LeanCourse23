@@ -29,7 +29,6 @@ example : circleEquation = SwapVariables circleEquation 0 1 := by
   simp [circleEquation, SwapVariables, Transposition]
   ring
 
-
 lemma transposition_order_two (i : Fin n) (j : Fin n) : Transposition i j ∘ Transposition i j = (fun k ↦ k) := by
   funext k
   simp[Transposition]
@@ -69,7 +68,7 @@ def DemazureDenominator (p : MvPolynomial (Fin (n + 1)) ℂ) (i : Fin n) : Polyn
 
   denominator_X
 
-noncomputable def Demazure (p : MvPolynomial (Fin (n + 1)) ℂ) (i : Fin n) : MvPolynomial (Fin (n + 1)) ℂ  :=
+def Demazure (i : Fin n) (p : MvPolynomial (Fin (n + 1)) ℂ) : MvPolynomial (Fin (n + 1)) ℂ  :=
   let numerator := DemazureNumerator p i
   let denominator := DemazureDenominator p i
 
@@ -132,3 +131,7 @@ lemma demazure_is_polynomial : ∀(i : Fin n), ∀(p : MvPolynomial (Fin (n + 1)
     simp[h3] at h2
     simp[h1,h2,h3, fin_succ_ne_fin_castSucc i, Fin.succ_ne_zero]
     simp[h1,h2,h3, fin_succ_ne_fin_castSucc i, Fin.succ_ne_zero]
+
+lemma composition_independent (i : Fin n) (j : Fin n) (h : |i - j| > Fin.ofNat' 1 n_pos) :
+  Demazure i ∘ Demazure j = Demazure j ∘ Demazure i := by
+  sorry
