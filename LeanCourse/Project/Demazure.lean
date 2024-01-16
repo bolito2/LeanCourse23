@@ -43,13 +43,17 @@ lemma swap_variables_mul (i j : Fin n) : ∀p q :
   intro p q
   simp[SwapVariablesFun]
 
-def SwapVariables (i : Fin n) (j : Fin n) : RingHom (MvPolynomial (Fin n) ℂ) (MvPolynomial (Fin n) ℂ) where
+lemma swap_variables_commutes (i j : Fin n) : ∀r : ℂ, SwapVariablesFun i j (C r) = C r := by
+  intro r
+  simp[SwapVariablesFun]
+
+def SwapVariables (i : Fin n) (j : Fin n) : AlgHom ℂ (MvPolynomial (Fin n) ℂ) (MvPolynomial (Fin n) ℂ) where
   toFun := SwapVariablesFun i j
   map_zero' := swap_variables_map_zero i j
   map_one' := swap_variables_map_one i j
   map_add' := swap_variables_add i j
   map_mul' := swap_variables_mul i j
-
+  commutes' := swap_variables_commutes i j
 
 def circleEquation : MvPolynomial (Fin 2) ℂ := X 0 ^ 2 + X 1 ^ 2 - C 1
 
@@ -147,7 +151,7 @@ lemma demazure_is_polynomial : ∀(i : Fin n), ∀(p : MvPolynomial (Fin (n + 1)
     simp[h3] at h2
     simp[h1,h2,h3, fin_succ_ne_fin_castSucc i, Fin.succ_ne_zero]
     simp[h1,h2,h3, fin_succ_ne_fin_castSucc i, Fin.succ_ne_zero]
-    
+
 
 lemma composition_independent (i : Fin n) (j : Fin n) (h : |i - j| > Fin.ofNat' 1 n_pos) :
   Demazure i ∘ Demazure j = Demazure j ∘ Demazure i := by
