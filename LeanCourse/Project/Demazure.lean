@@ -31,31 +31,14 @@ example : circleEquation = SwapVariables circleEquation 0 1 := by
 
 
 lemma transposition_order_two (i : Fin n) (j : Fin n) : Transposition i j ∘ Transposition i j = (fun k ↦ k) := by
-  simp[Transposition]
   funext k
-  unfold Function.comp
+  simp[Transposition]
 
-  dsimp
-  rcases eq_or_ne j i with i_eq_j | i_ne_j
-
-  rcases eq_or_ne k i with k_eq_i | k_ne_i
-  rw[if_pos k_eq_i, if_pos rfl, if_pos i_eq_j, i_eq_j, ← k_eq_i]
-
-  rw[if_neg k_ne_i]
-  rw[← i_eq_j] at k_ne_i
-  rw[if_neg k_ne_i, if_neg k_ne_i, if_neg]
-  rw[← i_eq_j]
-  exact k_ne_i
-
-  rcases eq_or_ne k i with k_eq_i | k_ne_i
-  rw[if_pos k_eq_i, if_neg i_ne_j, if_pos rfl]
-  rw[k_eq_i]
-  rw[if_neg k_ne_i]
-
-  rcases eq_or_ne k j with k_eq_j | k_ne_j
-  rw[if_pos k_eq_j, if_pos rfl, k_eq_j]
-  rw[if_neg k_ne_j, if_neg k_ne_i, if_neg k_ne_j]
-
+  by_cases h1 : k = i
+  simp[h1]
+  by_cases h2 : k = j
+  simp [h2]
+  simp[h1,h2]
 
 lemma swap_variables_order_two (p : MvPolynomial (Fin n) ℂ) (i : Fin n) (j : Fin n) :
 SwapVariables (SwapVariables p i j) i j = p := by
@@ -169,4 +152,3 @@ lemma demazure_is_polynomial : ∀(i : Fin n), ∀(p : MvPolynomial (Fin (n + 1)
     repeat rw[if_neg j_ne_i_succ]
     repeat rw[if_neg j_ne_zero]
     rw[if_neg j_neq_i]
-
