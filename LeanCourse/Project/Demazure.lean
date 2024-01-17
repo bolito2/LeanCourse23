@@ -13,6 +13,7 @@ import Mathlib.Data.MvPolynomial.Polynomial
 noncomputable section
 open MvPolynomial
 
+namespace Demazure
 variable {n : ℕ} (n_pos : n > 0)
 
 /- TODO: Use mathlib's permutations -/
@@ -113,7 +114,9 @@ def DemazureDenominator (i : Fin n) : Polynomial (MvPolynomial (Fin n) ℂ)  :=
   denominator_X
 
 lemma demazure_denominator_monic : ∀ i : Fin n, Polynomial.Monic (DemazureDenominator i) := by
-  sorry
+  intro i
+  simp[DemazureDenominator]
+  exact Polynomial.monic_X_sub_C (X i)
 
 lemma fin_succ_ne_fin_castSucc (i : Fin n) : Fin.succ i ≠ Fin.castSucc i := by
   apply Fin.val_ne_iff.mp
@@ -221,7 +224,3 @@ def Demazure (i : Fin n) : LinearMap (RingHom.id ℂ) (MvPolynomial (Fin (n + 1)
   toFun := DemazureFun i
   map_add' := demazure_map_add i
   map_smul' := demazure_map_smul i
-
-lemma composition_independent (i : Fin n) (j : Fin n) (h : |i - j| > Fin.ofNat' 1 n_pos) :
-  Demazure i ∘ Demazure j = Demazure j ∘ Demazure i := by
-  sorry
