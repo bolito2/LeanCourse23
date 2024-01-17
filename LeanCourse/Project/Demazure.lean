@@ -276,7 +276,7 @@ DemazureFun i (r • p) = r • DemazureFun i p := by
   rw[← AlgEquiv.map_mul]
   apply congr_arg
 
-  apply (poly_mul_cancel (DemazureDenominator i) (demazure_denominator_ne_zero i)).mpr
+  apply (poly_mul_cancel (demazure_denominator_ne_zero i)).mpr
   rw[← mul_assoc]
   rw [mul_comm (DemazureDenominator i) (Polynomial.C (C r))]
   simp[demazure_division_exact']
