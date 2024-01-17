@@ -10,6 +10,8 @@ import Mathlib.Data.MvPolynomial.Basic
 import Mathlib.Data.MvPolynomial.Rename
 import Mathlib.Data.MvPolynomial.Polynomial
 
+
+
 noncomputable section
 open MvPolynomial
 
@@ -122,13 +124,29 @@ lemma demazure_numerator_add (i : Fin n) : ∀ p q : MvPolynomial (Fin (n + 1)) 
         (fun i ↦ Fin.cases Polynomial.X (fun k ↦ Polynomial.C (MvPolynomial.X k)) i)
         ((SwapVariables (Fin.castSucc i) 0) ((SwapVariables (Fin.castSucc i) (Fin.succ i)) q)))
 
-
+lemma demazure_numerator_C_mul (i : Fin n) : ∀ (p : MvPolynomial (Fin (n + 1)) ℂ) (r : ℂ),
+ DemazureNumerator i (C r * p) = Polynomial.C (C r) * DemazureNumerator i p := by
+  simp[DemazureNumerator]
+  exact fun p r ↦
+    (mul_sub (Polynomial.C (C r))
+        (eval₂ (RingHom.comp Polynomial.C C)
+          (fun i ↦ Fin.cases Polynomial.X (fun k ↦ Polynomial.C (X k)) i)
+          ((SwapVariables (Fin.castSucc i) 0) p))
+        (eval₂ (RingHom.comp Polynomial.C C)
+          (fun i ↦ Fin.cases Polynomial.X (fun k ↦ Polynomial.C (X k)) i)
+          ((SwapVariables (Fin.castSucc i) 0)
+            ((SwapVariables (Fin.castSucc i) (Fin.succ i)) p)))).symm
 
 def DemazureDenominator (i : Fin n) : Polynomial (MvPolynomial (Fin n) ℂ)  :=
   let X_i : MvPolynomial (Fin n) ℂ := MvPolynomial.X i
   let denominator_X : Polynomial (MvPolynomial (Fin n) ℂ) := (Polynomial.X - Polynomial.C X_i)
 
   denominator_X
+
+lemma demazure_denominator_ne_zero : ∀ i : Fin n, DemazureDenominator i ≠ 0 := by
+  intro i
+  simp[DemazureDenominator]
+  exact Polynomial.X_sub_C_ne_zero (X i)
 
 lemma demazure_denominator_monic : ∀ i : Fin n, Polynomial.Monic (DemazureDenominator i) := by
   intro i
@@ -207,6 +225,17 @@ def DemazureFun (i : Fin n) (p : MvPolynomial (Fin (n + 1)) ℂ) : MvPolynomial 
 
   SwapVariables i' n' division_mv
 
+-- The main theorem to prove
+theorem poly_mul_cancel {p q : Polynomial (MvPolynomial (Fin n) ℂ)} (r : Polynomial (MvPolynomial (Fin n) ℂ)) (hr : r ≠ 0) : p = q ↔ (r * p) = (r * q) := by
+  constructor
+  intro h
+  exact congrArg (HMul.hMul r) h
+  intro h
+  simp[Polynomial.ext] at h
+  rcases h with h1|h2
+  exact h1
+  contradiction
+
 lemma demazure_map_add (i : Fin n) : ∀p q : MvPolynomial (Fin (n + 1)) ℂ,
   DemazureFun i (p + q) = DemazureFun i p + DemazureFun i q := by
   intro p q
@@ -216,12 +245,10 @@ lemma demazure_map_add (i : Fin n) : ∀p q : MvPolynomial (Fin (n + 1)) ℂ,
   rw[← AlgEquiv.map_add (AlgEquiv.symm (MvPolynomial.finSuccEquiv ℂ n)) (DemazureNumerator i p /ₘ DemazureDenominator i) (DemazureNumerator i q /ₘ DemazureDenominator i) ]
   apply congr_arg
 
-  have h : (DemazureDenominator i) * (DemazureNumerator i (p + q) /ₘ DemazureDenominator i) = (DemazureDenominator i)* (DemazureNumerator i p /ₘ DemazureDenominator i + DemazureNumerator i q /ₘ DemazureDenominator i) := by
-    simp[mul_add]
-    simp[demazure_division_exact']
-    exact demazure_numerator_add i p q
-
-  sorry
+  apply (poly_mul_cancel (DemazureDenominator i) (demazure_denominator_ne_zero i)).mpr
+  simp[mul_add]
+  simp[demazure_division_exact']
+  exact demazure_numerator_add i p q
 
 lemma demazure_map_smul (i : Fin n) : ∀ (r : ℂ) (p : MvPolynomial (Fin (n + 1)) ℂ),
 DemazureFun i (r • p) = r • DemazureFun i p := by
@@ -230,12 +257,18 @@ DemazureFun i (r • p) = r • DemazureFun i p := by
   nth_rewrite 2 [← swap_variables_commutes (Fin.castSucc i) n]
   rw[← swap_variables_mul]
   apply congr_arg
-  rw[← MvPolynomial.smul_eq_C_mul]
-  rw[← MvPolynomial.smul_eq_C_mul]
-  rw[← AlgEquiv.map_smul (AlgEquiv.symm (MvPolynomial.finSuccEquiv ℂ n)) r (DemazureNumerator i p /ₘ DemazureDenominator i) ]
+  nth_rewrite 2 [← MvPolynomial.finSuccEquiv_comp_C_eq_C]
+  simp[RingHom.comp]
+  rw[← AlgEquiv.map_mul]
   apply congr_arg
 
-  sorry
+  apply (poly_mul_cancel (DemazureDenominator i) (demazure_denominator_ne_zero i)).mpr
+  rw[← mul_assoc]
+  rw [mul_comm (DemazureDenominator i) (Polynomial.C (C r))]
+  simp[demazure_division_exact']
+  rw[mul_assoc]
+  rw[demazure_division_exact' i p]
+  exact demazure_numerator_C_mul i p r
 
 def Demazure (i : Fin n) : LinearMap (RingHom.id ℂ) (MvPolynomial (Fin (n + 1)) ℂ) (MvPolynomial (Fin (n + 1)) ℂ) where
   toFun := DemazureFun i
