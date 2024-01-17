@@ -16,10 +16,34 @@ open MvPolynomial
 namespace Demazure
 variable {n : ℕ} (n_pos : n > 0)
 
-/- TODO: Use mathlib's permutations -/
+/- Swapping variables of a polynomial is an algebra homomorphism -/
 
-def Transposition (i : Fin n)(j : Fin n) : (Fin n → Fin n) :=
+def TranspositionFun (i j : Fin n) : Fin n → Fin n :=
   fun k ↦ if k = i then j else if k = j then i else k
+
+lemma transposition_order_two (i j : Fin n): ∀k : Fin n, TranspositionFun i j (TranspositionFun i j k) = k := by
+  intro k
+  simp[TranspositionFun]
+
+  by_cases h1 : k = i
+  simp[h1]
+  by_cases h2 : k = j
+  simp [h2]
+  simp[h1,h2]
+
+lemma transposition_order_two' (i j : Fin n): TranspositionFun i j ∘ TranspositionFun i j = fun k ↦ k := by
+  funext k
+  exact transposition_order_two i j k
+
+def Transposition (i j : Fin n) : Equiv.Perm (Fin n) where
+  toFun := TranspositionFun i j
+  invFun := TranspositionFun i j
+  left_inv := by
+   simp[Function.LeftInverse]
+   exact transposition_order_two i j
+  right_inv := by
+    simp[Function.RightInverse]
+    exact transposition_order_two i j
 
 def SwapVariablesFun (i j : Fin n) (p : MvPolynomial (Fin n) ℂ) : (MvPolynomial (Fin n) ℂ) :=
   (rename (Transposition i j)) p
@@ -56,26 +80,19 @@ def SwapVariables (i : Fin n) (j : Fin n) : AlgHom ℂ (MvPolynomial (Fin n) ℂ
   map_mul' := swap_variables_mul i j
   commutes' := swap_variables_commutes i j
 
+/- Easy example -/
+
 def circleEquation : MvPolynomial (Fin 2) ℂ := X 0 ^ 2 + X 1 ^ 2 - C 1
 
 example : circleEquation = SwapVariables 0 1 circleEquation := by
   simp [circleEquation, SwapVariables, SwapVariablesFun, Transposition]
   ring
 
-lemma transposition_order_two (i : Fin n) (j : Fin n) : Transposition i j ∘ Transposition i j = (fun k ↦ k) := by
-  funext k
-  simp[Transposition]
-
-  by_cases h1 : k = i
-  simp[h1]
-  by_cases h2 : k = j
-  simp [h2]
-  simp[h1,h2]
 
 lemma swap_variables_order_two (p : MvPolynomial (Fin n) ℂ) (i : Fin n) (j : Fin n) :
   SwapVariables i j (SwapVariables i j p) = p := by
-  simp[SwapVariables, SwapVariablesFun]
-  rw[transposition_order_two]
+  simp[SwapVariables, SwapVariablesFun, Transposition]
+  rw[transposition_order_two' i j]
   apply MvPolynomial.rename_id
 
 def DemazureNumerator (i : Fin n) (p : MvPolynomial (Fin (n + 1)) ℂ) : Polynomial (MvPolynomial (Fin n) ℂ)  :=
