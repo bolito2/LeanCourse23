@@ -23,4 +23,10 @@ lemma symm_invariant_swap_variables (i j : Fin n) (g : MvPolynomial (Fin n) ℂ)
 
 lemma mul_symm (i : Fin n) (f g : MvPolynomial (Fin (n + 1)) ℂ) (h : MvPolynomial.IsSymmetric g) :
   Demazure i (g * f) = g * Demazure i f := by
+  simp[Demazure, DemazureFun]
+  rw[← symm_invariant_swap_variables (Fin.castSucc i) n g]
+  simp[SwapVariables]
+  rw[← swap_variables_mul (Fin.castSucc i) n]
+  apply congrArg
+
   sorry

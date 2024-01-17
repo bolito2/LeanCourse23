@@ -201,18 +201,6 @@ lemma demazure_division_exact : ∀(i : Fin n), ∀(p : MvPolynomial (Fin (n + 1
     simp[h1,h2,h3, fin_succ_ne_fin_castSucc i, Fin.succ_ne_zero]
     simp[h1,h2,h3, fin_succ_ne_fin_castSucc i, Fin.succ_ne_zero]
 
-lemma demazure_division_exact' : ∀(i : Fin n), ∀(p : MvPolynomial (Fin (n + 1)) ℂ),
-   DemazureDenominator i * ((DemazureNumerator i p).divByMonic (DemazureDenominator i)) = DemazureNumerator i p := by
-  intro i p
-
-  have wario :
-  (DemazureNumerator i p).modByMonic (DemazureDenominator i) +
-   DemazureDenominator i * (DemazureNumerator i p).divByMonic (DemazureDenominator i) =
-    DemazureNumerator i p  := Polynomial.modByMonic_add_div (DemazureNumerator i p) (demazure_denominator_monic i)
-  rw[demazure_division_exact i p] at wario
-  simp at wario
-  exact wario
-
 def DemazureFun (i : Fin n) (p : MvPolynomial (Fin (n + 1)) ℂ) : MvPolynomial (Fin (n + 1)) ℂ  :=
   let numerator := DemazureNumerator i p
   let denominator := DemazureDenominator i
@@ -226,6 +214,7 @@ def DemazureFun (i : Fin n) (p : MvPolynomial (Fin (n + 1)) ℂ) : MvPolynomial 
   SwapVariables i' n' division_mv
 
 -- The main theorem to prove
+
 lemma poly_mul_cancel {p q r : Polynomial (MvPolynomial (Fin n) ℂ)} (hr : r ≠ 0) : p = q ↔ (r * p) = (r * q) := by
   constructor
   intro h
@@ -249,6 +238,20 @@ lemma poly_div_cancel {p q r : Polynomial (MvPolynomial (Fin n) ℂ)} (hr : Poly
 
   rw[← div_p, ← div_q]
   apply (poly_mul_cancel (Polynomial.Monic.ne_zero hr)).mp h
+
+lemma poly_exact_div_mul_cancel {p q : Polynomial (MvPolynomial (Fin n) ℂ)}
+ (q_monic : Polynomial.Monic q) (exact_div : p %ₘ q = 0) : q * (p /ₘ q) = p := by
+  nth_rewrite 2 [← sub_zero p]
+  apply eq_sub_of_add_eq
+  rw[add_comm]
+  rw[← exact_div]
+  exact Polynomial.modByMonic_add_div p q_monic
+
+lemma demazure_division_exact' : ∀(i : Fin n), ∀(p : MvPolynomial (Fin (n + 1)) ℂ),
+   DemazureDenominator i * ((DemazureNumerator i p) /ₘ (DemazureDenominator i)) = DemazureNumerator i p := by
+  intro i p
+
+  apply poly_exact_div_mul_cancel (demazure_denominator_monic i) (demazure_division_exact i p)
 
 lemma demazure_map_add (i : Fin n) : ∀p q : MvPolynomial (Fin (n + 1)) ℂ,
   DemazureFun i (p + q) = DemazureFun i p + DemazureFun i q := by
@@ -288,3 +291,26 @@ def Demazure (i : Fin n) : LinearMap (RingHom.id ℂ) (MvPolynomial (Fin (n + 1)
   toFun := DemazureFun i
   map_add' := demazure_map_add i
   map_smul' := demazure_map_smul i
+
+lemma one_of_div_by_monic_self : ∀ (p : Polynomial (MvPolynomial (Fin n) ℂ)) (h : Polynomial.Monic p), p /ₘ p = 1 := by
+  intro p hp
+  apply (poly_mul_cancel (Polynomial.Monic.ne_zero hp)).mpr
+  ring
+  have : p %ₘ p = 0 := by
+    refine (Polynomial.dvd_iff_modByMonic_eq_zero hp).mpr ?_
+    rfl
+  apply poly_exact_div_mul_cancel hp this
+
+
+lemma demazure_not_multiplicative : ∀ (i : Fin n), ∃(p q : MvPolynomial (Fin (n+1)) ℂ),
+  Demazure i (p * q) ≠ Demazure i p * Demazure i q := by
+  intro i
+  use (X i)
+  use C 1
+  simp[Demazure, DemazureFun, DemazureNumerator, DemazureDenominator,
+   SwapVariables, SwapVariablesFun, Transposition, TranspositionFun,
+   fin_succ_ne_fin_castSucc, Fin.succ_ne_zero]
+
+  rw[one_of_div_by_monic_self]
+  simp[AlgHom.map_one]
+  exact Polynomial.monic_X_sub_C (X i)
