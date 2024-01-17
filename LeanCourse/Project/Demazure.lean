@@ -226,7 +226,7 @@ def DemazureFun (i : Fin n) (p : MvPolynomial (Fin (n + 1)) ℂ) : MvPolynomial 
   SwapVariables i' n' division_mv
 
 -- The main theorem to prove
-theorem poly_mul_cancel {p q : Polynomial (MvPolynomial (Fin n) ℂ)} (r : Polynomial (MvPolynomial (Fin n) ℂ)) (hr : r ≠ 0) : p = q ↔ (r * p) = (r * q) := by
+lemma poly_mul_cancel {p q r : Polynomial (MvPolynomial (Fin n) ℂ)} (hr : r ≠ 0) : p = q ↔ (r * p) = (r * q) := by
   constructor
   intro h
   exact congrArg (HMul.hMul r) h
@@ -235,6 +235,20 @@ theorem poly_mul_cancel {p q : Polynomial (MvPolynomial (Fin n) ℂ)} (r : Polyn
   rcases h with h1|h2
   exact h1
   contradiction
+
+lemma poly_div_cancel {p q r : Polynomial (MvPolynomial (Fin n) ℂ)} (hr : Polynomial.Monic r) (hp : p %ₘ r = 0) (hq :  q %ₘ r = 0) : p = q ↔ (p /ₘ r) = (q /ₘ r) := by
+  constructor
+  intro h
+  exact congrFun (congrArg Polynomial.divByMonic h) r
+  intro h
+  have div_p : p %ₘ r + r * (p /ₘ r) = p := Polynomial.modByMonic_add_div p hr
+  have div_q : q %ₘ r + r * (q /ₘ r) = q := Polynomial.modByMonic_add_div q hr
+
+  simp[hp] at div_p
+  simp[hq] at div_q
+
+  rw[← div_p, ← div_q]
+  apply (poly_mul_cancel (Polynomial.Monic.ne_zero hr)).mp h
 
 lemma demazure_map_add (i : Fin n) : ∀p q : MvPolynomial (Fin (n + 1)) ℂ,
   DemazureFun i (p + q) = DemazureFun i p + DemazureFun i q := by
@@ -245,7 +259,7 @@ lemma demazure_map_add (i : Fin n) : ∀p q : MvPolynomial (Fin (n + 1)) ℂ,
   rw[← AlgEquiv.map_add (AlgEquiv.symm (MvPolynomial.finSuccEquiv ℂ n)) (DemazureNumerator i p /ₘ DemazureDenominator i) (DemazureNumerator i q /ₘ DemazureDenominator i) ]
   apply congr_arg
 
-  apply (poly_mul_cancel (DemazureDenominator i) (demazure_denominator_ne_zero i)).mpr
+  apply (poly_mul_cancel (demazure_denominator_ne_zero i)).mpr
   simp[mul_add]
   simp[demazure_division_exact']
   exact demazure_numerator_add i p q
