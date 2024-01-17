@@ -85,7 +85,7 @@ def SwapVariables (i : Fin n) (j : Fin n) : AlgHom ℂ (MvPolynomial (Fin n) ℂ
 def circleEquation : MvPolynomial (Fin 2) ℂ := X 0 ^ 2 + X 1 ^ 2 - C 1
 
 example : circleEquation = SwapVariables 0 1 circleEquation := by
-  simp [circleEquation, SwapVariables, SwapVariablesFun, Transposition]
+  simp [circleEquation, SwapVariables, SwapVariablesFun, Transposition, TranspositionFun]
   ring
 
 
@@ -158,7 +158,7 @@ lemma demazure_division_exact : ∀(i : Fin n), ∀(p : MvPolynomial (Fin (n + 1
     intro j c _ _
 
     dsimp
-    simp[Transposition]
+    simp[Transposition, TranspositionFun]
 
 
     by_cases h1 : j = Fin.castSucc i
