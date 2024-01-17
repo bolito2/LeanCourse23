@@ -115,31 +115,6 @@ def DemazureDenominator (i : Fin n) : Polynomial (MvPolynomial (Fin n) ℂ)  :=
 lemma demazure_denominator_monic : ∀ i : Fin n, Polynomial.Monic (DemazureDenominator i) := by
   sorry
 
-def DemazureFun (i : Fin n) (p : MvPolynomial (Fin (n + 1)) ℂ) : MvPolynomial (Fin (n + 1)) ℂ  :=
-  let numerator := DemazureNumerator i p
-  let denominator := DemazureDenominator i
-
-  let division := numerator.divByMonic denominator
-  let division_mv : MvPolynomial (Fin (n + 1)) ℂ := (AlgEquiv.symm (finSuccEquiv ℂ n)) division
-
-  let i' : Fin (n + 1) := Fin.castSucc i
-  let n' : Fin (n + 1) := n
-
-  SwapVariables i' n' division_mv
-
-lemma demazure_map_add (i : Fin n) : ∀p q : MvPolynomial (Fin (n + 1)) ℂ,
-  DemazureFun i (p + q) = DemazureFun i p + DemazureFun i q := by
-  intro p q
-  simp[DemazureFun, SwapVariables]
-  simp[← swap_variables_add (Fin.castSucc i) n]
-  apply congr_arg
-  rw[← AlgEquiv.map_add (AlgEquiv.symm (MvPolynomial.finSuccEquiv ℂ n)) (DemazureNumerator i p /ₘ DemazureDenominator i) (DemazureNumerator i q /ₘ DemazureDenominator i) ]
-  apply congr_arg
-
-
-def Demazure (i : Fin n) : LinearMap (RingHom.id ℂ) (MvPolynomial (Fin (n + 1)) ℂ) (MvPolynomial (Fin (n + 1)) ℂ) where
-  toFun := DemazureFun i
-
 lemma fin_succ_ne_fin_castSucc (i : Fin n) : Fin.succ i ≠ Fin.castSucc i := by
   apply Fin.val_ne_iff.mp
   dsimp
@@ -199,7 +174,54 @@ lemma demazure_division_exact' : ∀(i : Fin n), ∀(p : MvPolynomial (Fin (n + 
   rw[demazure_division_exact i p] at wario
   simp at wario
   exact wario
-  
+
+def DemazureFun (i : Fin n) (p : MvPolynomial (Fin (n + 1)) ℂ) : MvPolynomial (Fin (n + 1)) ℂ  :=
+  let numerator := DemazureNumerator i p
+  let denominator := DemazureDenominator i
+
+  let division := numerator.divByMonic denominator
+  let division_mv : MvPolynomial (Fin (n + 1)) ℂ := (AlgEquiv.symm (finSuccEquiv ℂ n)) division
+
+  let i' : Fin (n + 1) := Fin.castSucc i
+  let n' : Fin (n + 1) := n
+
+  SwapVariables i' n' division_mv
+
+lemma demazure_map_add (i : Fin n) : ∀p q : MvPolynomial (Fin (n + 1)) ℂ,
+  DemazureFun i (p + q) = DemazureFun i p + DemazureFun i q := by
+  intro p q
+  simp[DemazureFun, SwapVariables]
+  simp[← swap_variables_add (Fin.castSucc i) n]
+  apply congr_arg
+  rw[← AlgEquiv.map_add (AlgEquiv.symm (MvPolynomial.finSuccEquiv ℂ n)) (DemazureNumerator i p /ₘ DemazureDenominator i) (DemazureNumerator i q /ₘ DemazureDenominator i) ]
+  apply congr_arg
+
+  have h : (DemazureDenominator i) * (DemazureNumerator i (p + q) /ₘ DemazureDenominator i) = (DemazureDenominator i)* (DemazureNumerator i p /ₘ DemazureDenominator i + DemazureNumerator i q /ₘ DemazureDenominator i) := by
+    simp[mul_add]
+    simp[demazure_division_exact']
+    exact demazure_numerator_add i p q
+
+  sorry
+
+lemma demazure_map_smul (i : Fin n) : ∀ (r : ℂ) (p : MvPolynomial (Fin (n + 1)) ℂ),
+DemazureFun i (r • p) = r • DemazureFun i p := by
+  intro r p
+  simp[DemazureFun, SwapVariables, MvPolynomial.smul_eq_C_mul]
+  nth_rewrite 2 [← swap_variables_commutes (Fin.castSucc i) n]
+  rw[← swap_variables_mul]
+  apply congr_arg
+  rw[← MvPolynomial.smul_eq_C_mul]
+  rw[← MvPolynomial.smul_eq_C_mul]
+  rw[← AlgEquiv.map_smul (AlgEquiv.symm (MvPolynomial.finSuccEquiv ℂ n)) r (DemazureNumerator i p /ₘ DemazureDenominator i) ]
+  apply congr_arg
+
+  sorry
+
+def Demazure (i : Fin n) : LinearMap (RingHom.id ℂ) (MvPolynomial (Fin (n + 1)) ℂ) (MvPolynomial (Fin (n + 1)) ℂ) where
+  toFun := DemazureFun i
+  map_add' := demazure_map_add i
+  map_smul' := demazure_map_smul i
+
 lemma composition_independent (i : Fin n) (j : Fin n) (h : |i - j| > Fin.ofNat' 1 n_pos) :
   Demazure i ∘ Demazure j = Demazure j ∘ Demazure i := by
   sorry
