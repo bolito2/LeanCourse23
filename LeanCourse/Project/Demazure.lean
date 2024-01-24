@@ -10,8 +10,6 @@ import Mathlib.Data.MvPolynomial.Basic
 import Mathlib.Data.MvPolynomial.Rename
 import Mathlib.Data.MvPolynomial.Polynomial
 
-
-
 noncomputable section
 open MvPolynomial
 
@@ -89,7 +87,6 @@ def circleEquation : MvPolynomial (Fin 2) ℂ := X 0 ^ 2 + X 1 ^ 2 - C 1
 example : circleEquation = SwapVariables 0 1 circleEquation := by
   simp [circleEquation, SwapVariables, SwapVariablesFun, Transposition, TranspositionFun]
   ring
-
 
 lemma swap_variables_order_two (p : MvPolynomial (Fin n) ℂ) (i : Fin n) (j : Fin n) :
   SwapVariables i j (SwapVariables i j p) = p := by
@@ -211,7 +208,7 @@ def DemazureFun (i : Fin n) (p : MvPolynomial (Fin (n + 1)) ℂ) : MvPolynomial 
   let i' : Fin (n + 1) := Fin.castSucc i
   let n' : Fin (n + 1) := n
 
-  SwapVariables i' n' division_mv
+  SwapVariables i' 0 division_mv
 
 -- The main theorem to prove
 
@@ -257,7 +254,7 @@ lemma demazure_map_add (i : Fin n) : ∀p q : MvPolynomial (Fin (n + 1)) ℂ,
   DemazureFun i (p + q) = DemazureFun i p + DemazureFun i q := by
   intro p q
   simp[DemazureFun, SwapVariables]
-  simp[← swap_variables_add (Fin.castSucc i) n]
+  simp[← swap_variables_add (Fin.castSucc i) 0]
   apply congr_arg
   rw[← AlgEquiv.map_add (AlgEquiv.symm (MvPolynomial.finSuccEquiv ℂ n)) (DemazureNumerator i p /ₘ DemazureDenominator i) (DemazureNumerator i q /ₘ DemazureDenominator i) ]
   apply congr_arg
@@ -271,7 +268,7 @@ lemma demazure_map_smul (i : Fin n) : ∀ (r : ℂ) (p : MvPolynomial (Fin (n + 
 DemazureFun i (r • p) = r • DemazureFun i p := by
   intro r p
   simp[DemazureFun, SwapVariables, MvPolynomial.smul_eq_C_mul]
-  nth_rewrite 2 [← swap_variables_commutes (Fin.castSucc i) n]
+  nth_rewrite 2 [← swap_variables_commutes (Fin.castSucc i) 0]
   rw[← swap_variables_mul]
   apply congr_arg
   nth_rewrite 2 [← MvPolynomial.finSuccEquiv_comp_C_eq_C]
