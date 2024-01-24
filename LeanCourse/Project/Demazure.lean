@@ -311,3 +311,58 @@ lemma demazure_not_multiplicative : ∀ (i : Fin n), ∃(p q : MvPolynomial (Fin
   rw[one_of_div_by_monic_self]
   simp[AlgHom.map_one]
   exact Polynomial.monic_X_sub_C (X i)
+
+lemma element_in_submonoid (x : MvPolynomial (Fin (n + 1)) ℂ) : x ∈ Submonoid.powers (x) := by
+  simp[Submonoid.mem_powers]
+
+def DemazureNumerator' (i : Fin n) (p : MvPolynomial (Fin (n + 1)) ℂ) : MvPolynomial (Fin (n + 1)) ℂ  :=
+  let i' : Fin (n + 1) := Fin.castSucc i
+  let i'_plus_1 : Fin (n + 1) := Fin.succ i
+
+  p - SwapVariables i' i'_plus_1 p
+
+def DemazureDenominator' (i : Fin n) : MvPolynomial (Fin (n + 1)) ℂ :=
+  let i' : Fin (n + 1) := Fin.castSucc i
+  let i'_plus_1 : Fin (n + 1) := Fin.succ i
+
+  X i' - X i'_plus_1
+
+def DemazureFun' (i : Fin n) (p : MvPolynomial (Fin (n + 1)) ℂ) :
+ Localization (Submonoid.powers (DemazureDenominator' i))   :=
+
+  Localization.mk (DemazureNumerator' i p) ⟨DemazureDenominator' i, element_in_submonoid (DemazureDenominator' i)⟩
+
+lemma demazure_fun'_add (i : Fin n) : ∀p q : MvPolynomial (Fin (n + 1)) ℂ,
+  DemazureFun' i (p + q) = DemazureFun' i p + DemazureFun' i q := by
+  intro p q
+  rw[DemazureFun']
+  rw[DemazureFun']
+  rw[DemazureFun']
+
+  rw[Localization.add_mk_self]
+  have : DemazureNumerator' i (p + q) = DemazureNumerator' i p + DemazureNumerator' i q := by
+    simp[DemazureNumerator']
+    ring
+  rw[this]
+
+lemma demazure_fun'_smul (i : Fin n) : ∀ (r : ℂ) (p : MvPolynomial (Fin (n + 1)) ℂ),
+DemazureFun' i (r • p) = r • DemazureFun' i p := by
+  intro r p
+  rw[DemazureFun']
+  rw[DemazureFun']
+
+  rw[Localization.smul_mk]
+  have : DemazureNumerator' i (r • p) = r • DemazureNumerator' i p := by
+    simp[DemazureNumerator', SwapVariables]
+    exact (smul_sub r p (SwapVariablesFun (Fin.castSucc i) (Fin.succ i) p)).symm
+  rw[this]
+
+
+def Demazure' (i : Fin n) :
+LinearMap (RingHom.id ℂ)
+(MvPolynomial (Fin (n + 1)) ℂ)
+ (Localization (Submonoid.powers (DemazureDenominator' i))) where
+  toFun := DemazureFun' i
+  map_add' := demazure_fun'_add i
+  map_smul' := demazure_fun'_smul i
+
