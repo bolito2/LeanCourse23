@@ -441,19 +441,18 @@ lemma wario (i : Fin n) : (X (Fin.castSucc i) : MvPolynomial (Fin (n + 1)) ℂ) 
   rw[MvPolynomial.coeff_X]
   rw[MvPolynomial.coeff_X']
 
-  have h : (fun₀ | Fin.castSucc i => 1) ≠ (fun₀ | Fin.succ i => 1) := by
-    sorry
+  have h : Finsupp.single (Fin.castSucc i) 1 ≠ Finsupp.single (Fin.succ i) 1 := by
+    apply FunLike.ne_iff.mpr
+    use Fin.castSucc i
+    simp [fin_succ_ne_fin_castSucc i]
+
   rw [if_neg h]
   simp
 
 
-
-
-
-/- Only works for inputs with denominator 1
 def Demazure (i : Fin n) (p : PolyFraction n) : PolyFraction n := by
   exact ⟨
     p.numerator * (SwapVariables (Fin.castSucc i) (Fin.succ i) p.denominator) - (SwapVariables (Fin.castSucc i) (Fin.succ i) p.numerator) * p.denominator,
     p.denominator * (SwapVariables (Fin.castSucc i) (Fin.succ i) p.denominator) * (X (Fin.castSucc i) - X (Fin.succ i)),
-    mul_ne_zero p.denominator_ne_zero (mul_ne_zero (swap_variables_ne_zero (Fin.castSucc n) (Fin.succ n) p.denominator p.denominator_ne_zero) )⟩
--/
+    mul_ne_zero (mul_ne_zero p.denominator_ne_zero (swap_variables_ne_zero (Fin.castSucc i) (Fin.succ i) p.denominator p.denominator_ne_zero)) (wario i)
+    ⟩
