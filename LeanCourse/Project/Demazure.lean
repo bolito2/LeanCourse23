@@ -12,6 +12,8 @@ import Mathlib.Data.MvPolynomial.Polynomial
 
 import Mathlib.Data.Finsupp.Defs
 
+set_option maxHeartbeats 10000000
+
 noncomputable section
 open MvPolynomial
 
@@ -61,6 +63,7 @@ def Transposition (i j : Fin n) : Equiv.Perm (Fin n) where
 def SwapVariablesFun (i j : Fin n) (p : MvPolynomial (Fin n) ℂ) : (MvPolynomial (Fin n) ℂ) :=
   (renameEquiv ℂ (Transposition i j)) p
 
+@[simp]
 lemma swap_variables_map_zero (i j : Fin n) : SwapVariablesFun i j 0 = 0 := by
   rw[SwapVariablesFun]
   have : (0 : MvPolynomial (Fin n) ℂ) = C 0 := by
@@ -68,50 +71,55 @@ lemma swap_variables_map_zero (i j : Fin n) : SwapVariablesFun i j 0 = 0 := by
   rw[this]
   exact rename_C (Transposition i j) 0
 
-lemma swap_variables_map_one (i j : Fin n) : SwapVariablesFun i j 1 = 1 := by
+@[simp]
+lemma swap_variables_map_one {i j : Fin n} : SwapVariablesFun i j 1 = 1 := by
   simp[SwapVariablesFun]
 
-lemma swap_variables_add (i j : Fin n) : ∀p q :
+@[simp]
+lemma swap_variables_add {i j : Fin n} : ∀p q :
  MvPolynomial (Fin n) ℂ, SwapVariablesFun i j (p + q) = SwapVariablesFun i j p + SwapVariablesFun i j q := by
   intro p q
   simp[SwapVariablesFun]
 
-lemma swap_variables_sub (i j : Fin n) : ∀p q :
+@[simp]
+lemma swap_variables_sub {i j : Fin n} : ∀p q :
  MvPolynomial (Fin n) ℂ, SwapVariablesFun i j (p - q) = SwapVariablesFun i j p - SwapVariablesFun i j q := by
   intro p q
   simp[SwapVariablesFun]
 
-lemma swap_variables_mul (i j : Fin n) : ∀p q :
+@[simp]
+lemma swap_variables_mul {i j : Fin n} : ∀p q :
  MvPolynomial (Fin n) ℂ, SwapVariablesFun i j (p * q) = SwapVariablesFun i j p * SwapVariablesFun i j q := by
   intro p q
   simp[SwapVariablesFun]
 
-lemma swap_variables_commutes (i j : Fin n) : ∀r : ℂ, SwapVariablesFun i j (C r) = C r := by
+@[simp]
+lemma swap_variables_commutes {i j : Fin n} : ∀r : ℂ, SwapVariablesFun i j (C r) = C r := by
   intro r
   simp[SwapVariablesFun]
 
+@[simp]
 lemma swap_variables_order_two {i j : Fin n} {p : MvPolynomial (Fin n) ℂ} :
   SwapVariablesFun i j (SwapVariablesFun i j p) = p := by
   simp[SwapVariablesFun, Transposition]
   rw[transposition_order_two' i j]
   apply MvPolynomial.rename_id
 
+@[simp]
 def SwapVariables (i : Fin n) (j : Fin n) : AlgEquiv ℂ (MvPolynomial (Fin n) ℂ) (MvPolynomial (Fin n) ℂ) where
   toFun := SwapVariablesFun i j
   invFun := SwapVariablesFun i j
   left_inv := by
     simp[Function.LeftInverse]
-    intro p
-    exact swap_variables_order_two
 
   right_inv := by
     simp[Function.RightInverse]
     intro p
     exact swap_variables_order_two
 
-  map_mul' := swap_variables_mul i j
-  map_add' := swap_variables_add i j
-  commutes' := swap_variables_commutes i j
+  map_mul' := swap_variables_mul
+  map_add' := swap_variables_add
+  commutes' := swap_variables_commutes
 
 /- Easy example -/
 
@@ -133,9 +141,6 @@ lemma unfold_demazure_numerator {i : Fin n} {p : MvPolynomial (Fin (n + 1)) ℂ}
 eval₂ (RingHom.comp Polynomial.C C) (fun i ↦ Fin.cases Polynomial.X (fun k ↦ Polynomial.C (X k)) i)
     (SwapVariablesFun (Fin.castSucc i) 0 (p - SwapVariablesFun (Fin.castSucc i) (Fin.succ i) p)) := by
   simp[DemazureNumerator, SwapVariables]
-  rw[← MvPolynomial.eval₂_sub]
-  rw[← swap_variables_sub (Fin.castSucc i) 0 p (SwapVariablesFun (Fin.castSucc i) (Fin.succ i) p)]
-
 
 lemma demazure_numerator_add (i : Fin n) : ∀ p q : MvPolynomial (Fin (n + 1)) ℂ,
   DemazureNumerator i (p + q) = DemazureNumerator i p + DemazureNumerator i q := by
@@ -289,7 +294,7 @@ lemma demazure_map_add (i : Fin n) : ∀p q : MvPolynomial (Fin (n + 1)) ℂ,
   DemazureFun i (p + q) = DemazureFun i p + DemazureFun i q := by
   intro p q
   simp[DemazureFun, SwapVariables]
-  simp[← swap_variables_add (Fin.castSucc i) 0]
+  rw[← swap_variables_add]
   apply congr_arg
   rw[← AlgEquiv.map_add (AlgEquiv.symm (MvPolynomial.finSuccEquiv ℂ n)) (DemazureNumerator i p /ₘ DemazureDenominator i) (DemazureNumerator i q /ₘ DemazureDenominator i) ]
   apply congr_arg
@@ -303,7 +308,7 @@ lemma demazure_map_smul (i : Fin n) : ∀ (r : ℂ) (p : MvPolynomial (Fin (n + 
 DemazureFun i (r • p) = r • DemazureFun i p := by
   intro r p
   simp[DemazureFun, SwapVariables, MvPolynomial.smul_eq_C_mul]
-  nth_rewrite 2 [← swap_variables_commutes (Fin.castSucc i) 0]
+  nth_rewrite 2 [← swap_variables_commutes]
   rw[← swap_variables_mul]
   apply congr_arg
   nth_rewrite 2 [← MvPolynomial.finSuccEquiv_comp_C_eq_C]
@@ -423,11 +428,13 @@ def mul : PolyFraction n → PolyFraction n → PolyFraction n := by
 def inv (p : PolyFraction n) (h : p.numerator ≠ 0) : PolyFraction n := by
   exact ⟨p.denominator, p.numerator, h⟩
 
+@[simp]
 def one : PolyFraction n where
   numerator := 1
   denominator := 1
   denominator_ne_zero := one_ne_zero
 
+@[simp]
 def zero : PolyFraction n where
   numerator := 0
   denominator := 1
@@ -460,23 +467,63 @@ lemma wario (i : Fin n) : (X (Fin.castSucc i) : MvPolynomial (Fin (n + 1)) ℂ) 
   simp
 
 
-def Demazure (i : Fin n) (p : PolyFraction n) : PolyFraction n := by
-  exact ⟨
+@[simp]
+def Demazure (i : Fin n) : PolyFraction n →  PolyFraction n := fun p =>
+   ⟨
     p.numerator * (SwapVariables (Fin.castSucc i) (Fin.succ i) p.denominator) - (SwapVariables (Fin.castSucc i) (Fin.succ i) p.numerator) * p.denominator,
     p.denominator * (SwapVariables (Fin.castSucc i) (Fin.succ i) p.denominator) * (X (Fin.castSucc i) - X (Fin.succ i)),
     mul_ne_zero (mul_ne_zero p.denominator_ne_zero (swap_variables_ne_zero (Fin.castSucc i) (Fin.succ i) p.denominator p.denominator_ne_zero)) (wario i)
     ⟩
 
-lemma waluigi {i j : Fin (n + 1)} : SwapVariablesFun i j (X i) = X j := by
+@[simp]
+lemma swap_variables_first {i j : Fin (n + 1)} : SwapVariablesFun i j (X i) = X j := by
   simp [SwapVariables, SwapVariablesFun, Transposition, TranspositionFun]
 
 lemma swap_variables_symmetrical {i j : Fin (n + 1)} {p : MvPolynomial (Fin (n + 1)) ℂ} : SwapVariablesFun i j p = SwapVariablesFun j i p := by
   simp [SwapVariables, SwapVariablesFun, Transposition, transposition_symmetric]
 
-lemma luigi {i j : Fin (n + 1)} : SwapVariablesFun i j (X j) = X i := by
+@[simp]
+lemma swap_variables_second {i j : Fin (n + 1)} : SwapVariablesFun i j (X j) = X i := by
   simp [SwapVariables, SwapVariablesFun, Transposition, TranspositionFun]
 
-lemma demazure_order_two : ∀ (i : Fin n) (p : MvPolynomial (Fin (n + 1)) ℂ), (Demazure i (Demazure i ⟨p, 1, one_ne_zero⟩ )).numerator = 0 := by
+@[simp]
+lemma swap_variables_none {i j k : Fin (n + 1)} (h1 : k ≠ i) (h2 : k ≠ j) :
+SwapVariablesFun i j (X k) = X k := by
+  simp [SwapVariables, SwapVariablesFun, Transposition, TranspositionFun, h1, h2]
+
+@[simp]
+def equals (p q : PolyFraction n) : Prop := p.numerator * q.denominator = q.numerator * p.denominator
+
+@[simp]
+def of_polynomial (p : MvPolynomial (Fin (n + 1)) ℂ) : PolyFraction n := by
+  exact ⟨p, 1, one_ne_zero⟩
+
+lemma demazure_order_two : ∀ (i : Fin n) (p : MvPolynomial (Fin (n + 1)) ℂ),
+  equals (Demazure i (Demazure i (of_polynomial p) )) zero := by
   intro i p
-  simp[Demazure, SwapVariables, swap_variables_order_two, waluigi, luigi]
+  simp[equals]
   ring
+
+@[simp]
+lemma wario_number_one {n : ℕ} {a : ℕ} {h : a < n} {a' : ℕ} {h' : a' < n} :
+({ val := a, isLt := h } : Fin n) ≠ { val := a', isLt := h' } ↔ a ≠ a' := by
+  rw[ne_eq]
+  rw[ne_eq]
+  apply not_iff_not.mpr
+  exact Fin.mk_eq_mk
+
+@[simp]
+lemma i_ne_i_plus_1 {i : ℕ} {h : i < n + 1}  {h' : i + 1 < n + 1}  :
+ ({ val := i, isLt := h } : Fin (n + 1)) ≠ { val := i + 1, isLt := h' } := by
+  rw[wario_number_one]
+  linarith
+
+lemma composition_adjacent (i : Fin n) : ∀ p : MvPolynomial (Fin (n + 2)) ℂ,
+  equals ((Demazure (Fin.castSucc i) ∘ Demazure (Fin.succ i) ∘ Demazure (Fin.castSucc i)) (of_polynomial p)) ((Demazure (Fin.succ i) ∘ Demazure (Fin.castSucc i) ∘ Demazure (Fin.succ i)) (of_polynomial p)) := by
+  intro p
+  simp
+  norm_num
+
+  --have h1 : ({ val := i, isLt := h } : Fin (n + 1)) ≠ { val := i + 1, isLt := h' } := i_ne_i_plus_1
+
+  rw[swap_variables_none]
