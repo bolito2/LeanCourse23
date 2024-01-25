@@ -38,6 +38,16 @@ lemma transposition_order_two' (i j : Fin n): TranspositionFun i j ∘ Transposi
   funext k
   exact transposition_order_two i j k
 
+lemma transposition_symmetric {i j : Fin n} : TranspositionFun i j = TranspositionFun j i := by
+  funext k
+  simp[TranspositionFun]
+  by_cases h1 : k = i
+  simp[h1]
+  by_cases h2 : i = j
+  simp [h2]
+  simp[h1,h2]
+  simp[h1]
+
 def Transposition (i j : Fin n) : Equiv.Perm (Fin n) where
   toFun := TranspositionFun i j
   invFun := TranspositionFun i j
@@ -80,7 +90,7 @@ lemma swap_variables_commutes (i j : Fin n) : ∀r : ℂ, SwapVariablesFun i j (
   intro r
   simp[SwapVariablesFun]
 
-lemma swap_variables_order_two (i j : Fin n) (p : MvPolynomial (Fin n) ℂ) :
+lemma swap_variables_order_two {i j : Fin n} {p : MvPolynomial (Fin n) ℂ} :
   SwapVariablesFun i j (SwapVariablesFun i j p) = p := by
   simp[SwapVariablesFun, Transposition]
   rw[transposition_order_two' i j]
@@ -92,12 +102,12 @@ def SwapVariables (i : Fin n) (j : Fin n) : AlgEquiv ℂ (MvPolynomial (Fin n) �
   left_inv := by
     simp[Function.LeftInverse]
     intro p
-    exact swap_variables_order_two i j p
+    exact swap_variables_order_two
 
   right_inv := by
     simp[Function.RightInverse]
     intro p
-    exact swap_variables_order_two i j p
+    exact swap_variables_order_two
 
   map_mul' := swap_variables_mul i j
   map_add' := swap_variables_add i j
@@ -456,3 +466,17 @@ def Demazure (i : Fin n) (p : PolyFraction n) : PolyFraction n := by
     p.denominator * (SwapVariables (Fin.castSucc i) (Fin.succ i) p.denominator) * (X (Fin.castSucc i) - X (Fin.succ i)),
     mul_ne_zero (mul_ne_zero p.denominator_ne_zero (swap_variables_ne_zero (Fin.castSucc i) (Fin.succ i) p.denominator p.denominator_ne_zero)) (wario i)
     ⟩
+
+lemma waluigi {i j : Fin (n + 1)} : SwapVariablesFun i j (X i) = X j := by
+  simp [SwapVariables, SwapVariablesFun, Transposition, TranspositionFun]
+
+lemma swap_variables_symmetrical {i j : Fin (n + 1)} {p : MvPolynomial (Fin (n + 1)) ℂ} : SwapVariablesFun i j p = SwapVariablesFun j i p := by
+  simp [SwapVariables, SwapVariablesFun, Transposition, transposition_symmetric]
+
+lemma luigi {i j : Fin (n + 1)} : SwapVariablesFun i j (X j) = X i := by
+  simp [SwapVariables, SwapVariablesFun, Transposition, TranspositionFun]
+
+lemma demazure_order_two : ∀ (i : Fin n) (p : MvPolynomial (Fin (n + 1)) ℂ), (Demazure i (Demazure i ⟨p, 1, one_ne_zero⟩ )).numerator = 0 := by
+  intro i p
+  simp[Demazure, SwapVariables, swap_variables_order_two, waluigi, luigi]
+  ring
