@@ -512,18 +512,24 @@ lemma wario_number_one {n : ℕ} {a : ℕ} {h : a < n} {a' : ℕ} {h' : a' < n} 
   apply not_iff_not.mpr
   exact Fin.mk_eq_mk
 
-@[simp]
+
 lemma i_ne_i_plus_1 {i : ℕ} {h : i < n + 1}  {h' : i + 1 < n + 1}  :
  ({ val := i, isLt := h } : Fin (n + 1)) ≠ { val := i + 1, isLt := h' } := by
   rw[wario_number_one]
   linarith
 
-lemma composition_adjacent (i : Fin n) : ∀ p : MvPolynomial (Fin (n + 2)) ℂ,
-  equals ((Demazure (Fin.castSucc i) ∘ Demazure (Fin.succ i) ∘ Demazure (Fin.castSucc i)) (of_polynomial p)) ((Demazure (Fin.succ i) ∘ Demazure (Fin.castSucc i) ∘ Demazure (Fin.succ i)) (of_polynomial p)) := by
+@[simp]
+lemma omg {i : ℕ} : i + 1 + 1 = i + 2 := by
+  ring
+
+lemma composition_adjacent (i : Fin n) (h : i + 1 < n) : ∀ p : MvPolynomial (Fin (n + 1)) ℂ,
+  equals ((Demazure i ∘ Demazure ⟨i+1, h⟩ ∘ Demazure i) (of_polynomial p)) ((Demazure ⟨i+1, h⟩ ∘ Demazure i ∘ Demazure ⟨i+1, h⟩) (of_polynomial p)) := by
   intro p
-  simp
+  simp[h, Fin.castSucc, Fin.succ, Fin.castAdd, Fin.castLE]
   norm_num
 
-  --have h1 : ({ val := i, isLt := h } : Fin (n + 1)) ≠ { val := i + 1, isLt := h' } := i_ne_i_plus_1
-
-  rw[swap_variables_none]
+  --have h1 {in1 : i < n + 1} {in2 : i + 1 < n + 1} : ({ val := i, isLt := in1 } : Fin (n + 1)) ≠ { val := i + 1, isLt := in2 } := i_ne_i_plus_1
+  have h2 {in1 : i < n + 1} {in2 : i + 1 + 1 < n + 1} : ({ val := i, isLt := in1 } : Fin (n + 1)) ≠ { val := i + 1 + 1, isLt := in2 } := by
+    rw[wario_number_one]
+    linarith
+  ring
