@@ -573,34 +573,35 @@ lemma swap_variables_commutes_adjacent {i : Fin n} {p : MvPolynomial (Fin (n + 1
   rw[huh]
 
 
-
+lemma unfold_non_adjacent (i j : Fin n) (h : |(i.val : ℤ ) - j.val| > 1) :
+  (Fin.castSucc i : Fin (n + 1)) ≠ (Fin.castSucc j : Fin (n + 1)) ∧
+  (Fin.castSucc i : Fin (n + 1)) ≠ (Fin.succ j : Fin (n + 1)) ∧
+  (Fin.succ i : Fin (n + 1)) ≠ (Fin.castSucc j : Fin (n + 1)) ∧
+  (Fin.succ i : Fin (n + 1)) ≠ (Fin.succ j : Fin (n + 1)) := by
+    constructor
+    · apply Fin.val_ne_iff.mp
+      simp [Fin.castSucc]
+      intro wah
+      simp[wah] at h
+    constructor
+    · apply Fin.val_ne_iff.mp
+      simp [Fin.castSucc]
+      intro wah
+      simp[wah] at h
+    constructor
+    · apply Fin.val_ne_iff.mp
+      simp [Fin.castSucc]
+      intro wah
+      simp[← wah] at h
+    apply Fin.val_ne_iff.mp
+    simp [Fin.castSucc]
+    intro wah
+    simp[wah] at h
 
 lemma transposition_commutes_non_adjacent (i j : Fin n) {k : Fin (n + 1)} (h : |(i.val : ℤ ) - j.val| > 1) :
   TranspositionFun (Fin.castSucc i) (Fin.succ i) (TranspositionFun (Fin.castSucc j) (Fin.succ j) k) =
    TranspositionFun (Fin.castSucc j) (Fin.succ j) (TranspositionFun (Fin.castSucc i) (Fin.succ i) k) := by
-    have h1 : (Fin.castSucc i : Fin (n + 1)) ≠ (Fin.castSucc j : Fin (n + 1)) := by
-      apply Fin.val_ne_iff.mp
-      simp [Fin.castSucc]
-      intro wah
-      simp[wah] at h
-
-    have h2 : (Fin.castSucc i : Fin (n + 1)) ≠ (Fin.succ j : Fin (n + 1)) := by
-      apply Fin.val_ne_iff.mp
-      simp [Fin.castSucc]
-      intro wah
-      simp[wah] at h
-
-    have h3 : (Fin.succ i : Fin (n + 1)) ≠ (Fin.castSucc j : Fin (n + 1)) := by
-      apply Fin.val_ne_iff.mp
-      simp [Fin.castSucc]
-      intro wah
-      simp[← wah] at h
-
-    have h4 : (Fin.succ i : Fin (n + 1)) ≠ (Fin.succ j : Fin (n + 1)) := by
-      apply Fin.val_ne_iff.mp
-      simp [Fin.castSucc]
-      intro wah
-      simp[wah] at h
+    rcases unfold_non_adjacent i j h with ⟨h1, h2, h3, h4⟩
 
     by_cases c0 : k = Fin.castSucc i
     simp[h1,h2,h3,h4,c0]
@@ -640,29 +641,7 @@ lemma composition_non_adjacent (i j : Fin n)  (h : |(i.val : ℤ ) - j.val| > 1)
   intro p
   simp[equals]
 
-  have h1 : (Fin.castSucc i : Fin (n + 1)) ≠ (Fin.castSucc j : Fin (n + 1)) := by
-    apply Fin.val_ne_iff.mp
-    simp [Fin.castSucc]
-    intro wah
-    simp[wah] at h
-
-  have h2 : (Fin.castSucc i : Fin (n + 1)) ≠ (Fin.succ j : Fin (n + 1)) := by
-    apply Fin.val_ne_iff.mp
-    simp [Fin.castSucc]
-    intro wah
-    simp[wah] at h
-
-  have h3 : (Fin.succ i : Fin (n + 1)) ≠ (Fin.castSucc j : Fin (n + 1)) := by
-    apply Fin.val_ne_iff.mp
-    simp [Fin.castSucc]
-    intro wah
-    simp[← wah] at h
-
-  have h4 : (Fin.succ i : Fin (n + 1)) ≠ (Fin.succ j : Fin (n + 1)) := by
-    apply Fin.val_ne_iff.mp
-    simp [Fin.castSucc]
-    intro wah
-    simp[wah] at h
+  rcases unfold_non_adjacent i j h with ⟨h1, h2, h3, h4⟩
 
   simp[swap_variables_commutes_non_adjacent i j h, h1, h2, h3, h4, h1.symm, h2.symm, h3.symm, h4.symm]
 
