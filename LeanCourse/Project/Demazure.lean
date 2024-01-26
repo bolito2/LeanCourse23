@@ -17,7 +17,7 @@ set_option maxHeartbeats 10000000
 noncomputable section
 open MvPolynomial
 
-variable {n : ℕ} (n_pos : n > 0)
+variable {n : ℕ} (n_pos : n > 0) (n_gt_1 : n > 1)
 
 namespace Demazure
 
@@ -505,6 +505,11 @@ SwapVariablesFun i j (X k) = X k := by
   simp [SwapVariables, SwapVariablesFun, Transposition, TranspositionFun, h1, h2]
 
 @[simp]
+lemma swap_variables_none' {i j k : Fin (n + 1)} {h1 : k ≠ i} {h2 : k ≠ j} :
+SwapVariablesFun i j (X k) = X k := by
+  simp [SwapVariables, SwapVariablesFun, Transposition, TranspositionFun, h1, h2]
+
+@[simp]
 def equals (p q : PolyFraction n) : Prop := p.numerator * q.denominator = q.numerator * p.denominator
 
 @[simp]
@@ -570,18 +575,103 @@ lemma swap_variables_commutes_adjacent {i : Fin n} {p : MvPolynomial (Fin (n + 1
 
 
 
-lemma composition_adjacent (i : Fin n) (h : i + 1 < n) : ∀ p : MvPolynomial (Fin (n + 1)) ℂ,
-  equals ((Demazure i ∘ Demazure ⟨i+1, h⟩ ∘ Demazure i) (of_polynomial p)) ((Demazure ⟨i+1, h⟩ ∘ Demazure i ∘ Demazure ⟨i+1, h⟩) (of_polynomial p)) := by
+lemma transposition_commutes_non_adjacent (i j : Fin n) {k : Fin (n + 1)} (h : |(i.val : ℤ ) - j.val| > 1) :
+  TranspositionFun (Fin.castSucc i) (Fin.succ i) (TranspositionFun (Fin.castSucc j) (Fin.succ j) k) =
+   TranspositionFun (Fin.castSucc j) (Fin.succ j) (TranspositionFun (Fin.castSucc i) (Fin.succ i) k) := by
+    have h1 : (Fin.castSucc i : Fin (n + 1)) ≠ (Fin.castSucc j : Fin (n + 1)) := by
+      apply Fin.val_ne_iff.mp
+      simp [Fin.castSucc]
+      intro wah
+      simp[wah] at h
+
+    have h2 : (Fin.castSucc i : Fin (n + 1)) ≠ (Fin.succ j : Fin (n + 1)) := by
+      apply Fin.val_ne_iff.mp
+      simp [Fin.castSucc]
+      intro wah
+      simp[wah] at h
+
+    have h3 : (Fin.succ i : Fin (n + 1)) ≠ (Fin.castSucc j : Fin (n + 1)) := by
+      apply Fin.val_ne_iff.mp
+      simp [Fin.castSucc]
+      intro wah
+      simp[← wah] at h
+
+    have h4 : (Fin.succ i : Fin (n + 1)) ≠ (Fin.succ j : Fin (n + 1)) := by
+      apply Fin.val_ne_iff.mp
+      simp [Fin.castSucc]
+      intro wah
+      simp[wah] at h
+
+    by_cases c0 : k = Fin.castSucc i
+    simp[h1,h2,h3,h4,c0]
+    simp[transposition_none h3 h4]
+
+    by_cases c1 : k = Fin.succ i
+    simp[h1,h2,h3,h4,c1]
+    simp[transposition_none h3 h4]
+
+    by_cases c2 : k = Fin.castSucc j
+    simp[h1,h2,h3,h4,c2]
+    simp[transposition_none h2.symm h4.symm]
+    simp[transposition_none h1.symm h3.symm]
+
+    by_cases c3 : k = Fin.succ j
+    simp[transposition_none h1.symm h3.symm, c3]
+    simp[transposition_none h2.symm h4.symm]
+
+    simp[h1,h2,h3,h4,c0,c1,c2,c3]
+
+lemma swap_variables_commutes_non_adjacent (i j : Fin n) (h : |(i.val : ℤ ) - j.val| > 1)
+ {p : MvPolynomial (Fin (n + 1)) ℂ} :
+  SwapVariablesFun (Fin.castSucc i) (Fin.succ i) (SwapVariablesFun (Fin.castSucc j) (Fin.succ j) p) =
+   SwapVariablesFun (Fin.castSucc j) (Fin.succ j) (SwapVariablesFun (Fin.castSucc i) (Fin.succ i) p) := by
+    simp[SwapVariablesFun, Transposition, Function.comp]
+
+    have wah : (fun x ↦ TranspositionFun (Fin.castSucc i) (Fin.succ i) (TranspositionFun (Fin.castSucc j) (Fin.succ j) x)) =
+    (fun x ↦ TranspositionFun (Fin.castSucc j) (Fin.succ j) (TranspositionFun (Fin.castSucc i) (Fin.succ i) x)) :=
+    by
+      funext k
+      rw[transposition_commutes_non_adjacent i j h]
+    rw[wah]
+
+
+lemma composition_non_adjacent (i j : Fin n)  (h : |(i.val : ℤ ) - j.val| > 1) : ∀ p : MvPolynomial (Fin (n + 1)) ℂ,
+  equals ((Demazure i ∘ Demazure j) (of_polynomial p)) ((Demazure j ∘ Demazure i) (of_polynomial p)) := by
   intro p
-  simp[h, Fin.castSucc, Fin.succ, Fin.castAdd, Fin.castLE]
-  norm_num
+  simp[equals]
 
-  have h0 : i < n + 1 := by
-    linarith
-  have h1 : i + 1 < n + 1 := by
-    linarith
-  have h2 : i + 2 < n + 1 := by
-    linarith
+  have h1 : (Fin.castSucc i : Fin (n + 1)) ≠ (Fin.castSucc j : Fin (n + 1)) := by
+    apply Fin.val_ne_iff.mp
+    simp [Fin.castSucc]
+    intro wah
+    simp[wah] at h
 
-  simp [swap_variables_commutes_adjacent h0 h1 h2]
+  have h2 : (Fin.castSucc i : Fin (n + 1)) ≠ (Fin.succ j : Fin (n + 1)) := by
+    apply Fin.val_ne_iff.mp
+    simp [Fin.castSucc]
+    intro wah
+    simp[wah] at h
+
+  have h3 : (Fin.succ i : Fin (n + 1)) ≠ (Fin.castSucc j : Fin (n + 1)) := by
+    apply Fin.val_ne_iff.mp
+    simp [Fin.castSucc]
+    intro wah
+    simp[← wah] at h
+
+  have h4 : (Fin.succ i : Fin (n + 1)) ≠ (Fin.succ j : Fin (n + 1)) := by
+    apply Fin.val_ne_iff.mp
+    simp [Fin.castSucc]
+    intro wah
+    simp[wah] at h
+
+  simp[swap_variables_commutes_non_adjacent i j h, h1, h2, h3, h4, h1.symm, h2.symm, h3.symm, h4.symm]
+
+  rw[swap_variables_none']
+  rw[swap_variables_none']
+
   ring
+
+  exact h3
+  exact h4
+  exact h2.symm
+  exact h4.symm

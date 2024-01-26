@@ -29,7 +29,7 @@ lemma numerator_mul_symm (i : Fin n) (f g : MvPolynomial (Fin (n + 1)) ℂ) (h :
   rw[unfold_demazure_numerator]
   rw[unfold_demazure_numerator]
 
-  
+
 
 lemma mul_symm (i : Fin n) (f g : MvPolynomial (Fin (n + 1)) ℂ) (h : MvPolynomial.IsSymmetric g) :
   Demazure i (g * f) = g * Demazure i f := by
@@ -40,3 +40,21 @@ lemma mul_symm (i : Fin n) (f g : MvPolynomial (Fin (n + 1)) ℂ) (h : MvPolynom
   apply congrArg
 
   sorry
+
+
+
+lemma composition_adjacent (i : Fin n) (h : i + 1 < n) : ∀ p : MvPolynomial (Fin (n + 1)) ℂ,
+  equals ((Demazure i ∘ Demazure ⟨i+1, h⟩ ∘ Demazure i) (of_polynomial p)) ((Demazure ⟨i+1, h⟩ ∘ Demazure i ∘ Demazure ⟨i+1, h⟩) (of_polynomial p)) := by
+  intro p
+  simp[h, Fin.castSucc, Fin.succ, Fin.castAdd, Fin.castLE]
+  norm_num
+
+  have h0 : i < n + 1 := by
+    linarith
+  have h1 : i + 1 < n + 1 := by
+    linarith
+  have h2 : i + 2 < n + 1 := by
+    linarith
+
+  simp [swap_variables_commutes_adjacent h0 h1 h2]
+  ring
