@@ -94,6 +94,12 @@ lemma swap_variables_mul {i j : Fin n} : ∀p q :
   simp[SwapVariablesFun]
 
 @[simp]
+lemma swap_variables_mul' (i j : Fin n) : ∀p q :
+ MvPolynomial (Fin n) ℂ, SwapVariablesFun i j (p * q) = SwapVariablesFun i j p * SwapVariablesFun i j q := by
+  intro p q
+  simp[SwapVariablesFun]
+
+@[simp]
 lemma swap_variables_commutes {i j : Fin n} : ∀r : ℂ, SwapVariablesFun i j (C r) = C r := by
   intro r
   simp[SwapVariablesFun]
@@ -397,17 +403,6 @@ DemazureFun' i (r • p) = r • DemazureFun' i p := by
     exact (smul_sub r p (SwapVariablesFun (Fin.castSucc i) (Fin.succ i) p)).symm
   rw[this]
 
-
-def Demazure' (i : Fin n) :
-LinearMap (RingHom.id ℂ)
-(MvPolynomial (Fin (n + 1)) ℂ)
- (Localization (Submonoid.powers (DemazureDenominator' i))) where
-  toFun := DemazureFun' i
-  map_add' := demazure_fun'_add i
-  map_smul' := demazure_fun'_smul i
-
-namespace PolyFraction
-
 structure PolyFraction (n : ℕ) where
   numerator : MvPolynomial (Fin (n + 1)) ℂ
   denominator : MvPolynomial (Fin (n + 1)) ℂ
@@ -440,7 +435,7 @@ def zero : PolyFraction n where
   denominator := 1
   denominator_ne_zero := one_ne_zero
 
-def DemazureDenominator (i : Fin n) : PolyFraction n := by
+def DDenominator (i : Fin n) : PolyFraction n := by
   exact ⟨DemazureDenominator' i, 1, one_ne_zero⟩
 
 lemma swap_variables_ne_zero (i j : Fin (n + 1)) : ∀ p : MvPolynomial (Fin (n + 1)) ℂ, p ≠ 0 → SwapVariables i j p ≠ 0 := by
@@ -468,7 +463,7 @@ lemma wario (i : Fin n) : (X (Fin.castSucc i) : MvPolynomial (Fin (n + 1)) ℂ) 
 
 
 @[simp]
-def Demazure (i : Fin n) : PolyFraction n →  PolyFraction n := fun p =>
+def Dem (i : Fin n) : PolyFraction n →  PolyFraction n := fun p =>
    ⟨
     p.numerator * (SwapVariables (Fin.castSucc i) (Fin.succ i) p.denominator) - (SwapVariables (Fin.castSucc i) (Fin.succ i) p.numerator) * p.denominator,
     p.denominator * (SwapVariables (Fin.castSucc i) (Fin.succ i) p.denominator) * (X (Fin.castSucc i) - X (Fin.succ i)),
@@ -517,7 +512,7 @@ def of_polynomial (p : MvPolynomial (Fin (n + 1)) ℂ) : PolyFraction n := by
   exact ⟨p, 1, one_ne_zero⟩
 
 lemma demazure_order_two : ∀ (i : Fin n) (p : MvPolynomial (Fin (n + 1)) ℂ),
-  equals (Demazure i (Demazure i (of_polynomial p) )) zero := by
+  equals (Dem i (Dem i (of_polynomial p) )) zero := by
   intro i p
   simp[equals]
   ring
@@ -637,7 +632,7 @@ lemma swap_variables_commutes_non_adjacent (i j : Fin n) (h : |(i.val : ℤ ) - 
 
 
 lemma composition_non_adjacent (i j : Fin n)  (h : |(i.val : ℤ ) - j.val| > 1) : ∀ p : MvPolynomial (Fin (n + 1)) ℂ,
-  equals ((Demazure i ∘ Demazure j) (of_polynomial p)) ((Demazure j ∘ Demazure i) (of_polynomial p)) := by
+  equals ((Dem i ∘ Dem j) (of_polynomial p)) ((Dem j ∘ Dem i) (of_polynomial p)) := by
   intro p
   simp[equals]
 
@@ -654,3 +649,39 @@ lemma composition_non_adjacent (i j : Fin n)  (h : |(i.val : ℤ ) - j.val| > 1)
   exact h4
   exact h2.symm
   exact h4.symm
+
+  lemma demazure_definitions_equivalent : ∀ i : Fin n, ∀ p : MvPolynomial (Fin (n + 1)) ℂ,
+  equals (Dem i (of_polynomial p)) (of_polynomial (DemazureFun i p)) := by
+  intro i p
+  simp[equals, Dem]
+
+  have h : DemazureDenominator i * ((DemazureNumerator i p) /ₘ (DemazureDenominator i)) = DemazureNumerator i p := demazure_division_exact' i p
+
+  apply (SwapVariables (Fin.castSucc i) (0 : Fin (n + 1))).injective
+  apply (MvPolynomial.finSuccEquiv ℂ n).injective
+
+  have h2 : DemazureNumerator i p =  (MvPolynomial.finSuccEquiv ℂ n)
+    ((SwapVariables (Fin.castSucc i) 0) (p - SwapVariablesFun (Fin.castSucc i) (Fin.succ i) p)) := by
+    simp [DemazureNumerator]
+
+
+  rw[← h2]
+  rw[← h]
+  simp [SwapVariables]
+  rw[swap_variables_none (fin_succ_ne_fin_castSucc i) (Fin.succ_ne_zero i)]
+  simp
+
+  have h3 : DemazureDenominator i = Polynomial.X - Polynomial.C (X i) := by
+    simp [DemazureDenominator]
+
+  rw[← h3]
+  rw [mul_comm (eval₂ (RingHom.comp Polynomial.C C) (fun i ↦ Fin.cases Polynomial.X (fun k ↦ Polynomial.C (X k)) i)
+      (SwapVariablesFun (Fin.castSucc i) 0 (DemazureFun i p))) (DemazureDenominator i)]
+  rw[← poly_mul_cancel (demazure_denominator_ne_zero i)]
+  simp[DemazureFun]
+  have h4 {q : MvPolynomial (Fin (n + 1)) ℂ } : eval₂ (RingHom.comp Polynomial.C C) (fun i ↦ Fin.cases Polynomial.X (fun k ↦ Polynomial.C (X k)) i)
+    q = (MvPolynomial.finSuccEquiv ℂ n) q := by
+    simp
+  rw[h4]
+  nth_rewrite 1 [← AlgEquiv.coe_apply_coe_coe_symm_apply (finSuccEquiv ℂ n) (DemazureNumerator i p /ₘ DemazureDenominator i)]
+  rfl
