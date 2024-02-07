@@ -268,6 +268,13 @@ lemma poly_mul_cancel {p q r : Polynomial (MvPolynomial (Fin n) ℂ)} (hr : r �
   exact h1
   contradiction
 
+lemma poly_cancel_left {p q r : MvPolynomial (Fin n) ℂ} (hr : r ≠ 0) : (r * p) = (r * q) → p = q := by
+  intro h
+  simp[Polynomial.ext] at h
+  rcases h with h1|h2
+  exact h1
+  contradiction
+
 lemma poly_div_cancel {p q r : Polynomial (MvPolynomial (Fin n) ℂ)} (hr : Polynomial.Monic r) (hp : p %ₘ r = 0) (hq :  q %ₘ r = 0) : p = q ↔ (p /ₘ r) = (q /ₘ r) := by
   constructor
   intro h
@@ -403,14 +410,63 @@ DemazureFun' i (r • p) = r • DemazureFun' i p := by
     exact (smul_sub r p (SwapVariablesFun (Fin.castSucc i) (Fin.succ i) p)).symm
   rw[this]
 
-structure PolyFraction (n : ℕ) where
+structure PolyFraction' (n : ℕ) where
   numerator : MvPolynomial (Fin (n + 1)) ℂ
   denominator : MvPolynomial (Fin (n + 1)) ℂ
   denominator_ne_zero : denominator ≠ 0
 
-def add : PolyFraction n → PolyFraction n → PolyFraction n := by
+def r (n : ℕ) : PolyFraction' n → PolyFraction' n → Prop :=
+  fun p q => p.numerator * q.denominator = q.numerator * p.denominator
+
+lemma r_equiv : Equivalence (r n) := by
+  constructor
+  intro p
+  simp[r]
+  ring
   intro p q
-  exact ⟨p.numerator * q.denominator + q.numerator * p.denominator, p.denominator * q.denominator, mul_ne_zero p.denominator_ne_zero q.denominator_ne_zero⟩
+  simp[r]
+  ring
+  intro h
+  simp[h]
+  intro x y z
+  simp[r]
+  intro h1 h2
+
+  by_cases h3 : y.numerator = 0
+  simp[h3, y.denominator_ne_zero] at h1
+  simp[h3, y.denominator_ne_zero] at h2
+  simp[h1, h2, h3]
+
+  apply poly_cancel_left y.denominator_ne_zero
+  apply poly_cancel_left h3
+  ring
+  rw[mul_assoc y.numerator]
+  rw[mul_comm y.denominator x.numerator]
+  rw[h1]
+  rw[mul_comm y.numerator (y.numerator * x.denominator)]
+  rw[mul_assoc]
+  rw[h2]
+  ring
+
+def s (n : ℕ) : Setoid (PolyFraction' n) where
+  r := r n
+  iseqv := r_equiv
+
+#check Quotient (s n)
+
+def PolyFraction (n : ℕ) := (Quotient (s n))
+
+def mk := Quotient.mk (s n)
+
+def add : PolyFraction' n → PolyFraction' n → PolyFraction n :=
+  fun p q => mk ⟨p.numerator * q.denominator + q.numerator * p.denominator, p.denominator * q.denominator, mul_ne_zero p.denominator_ne_zero q.denominator_ne_zero⟩
+
+lemma add_s : ∀ a1 a2 b1 b2 : PolyFraction' n, r n a1 b1 → r n a2 b2 → r n (add a1 a2) (add b1 b2) := by
+  intro a1 a2 b1 b2
+  intro h1 h2
+  simp[add]
+  ring
+
 
 def sub : PolyFraction n → PolyFraction n → PolyFraction n := by
   intro p q
@@ -434,6 +490,92 @@ def zero : PolyFraction n where
   numerator := 0
   denominator := 1
   denominator_ne_zero := one_ne_zero
+
+def neg (p : PolyFraction n) : PolyFraction n := by
+  exact ⟨-p.numerator, p.denominator, p.denominator_ne_zero⟩
+
+@[simp]
+lemma add_comm (p q : PolyFraction n) : add p q = add q p := by
+  simp[add]
+  ring
+
+@[simp]
+lemma add_assoc (p q r : PolyFraction n) : add (add p q) r = add p (add q r) := by
+  simp[add]
+  ring
+
+@[simp]
+lemma zero_add (p : PolyFraction n) : add zero p = p := by
+  simp[add]
+
+@[simp]
+lemma add_zero (p : PolyFraction n) : add p zero = p := by
+  simp[add]
+
+@[simp]
+lemma zero_mul (p : PolyFraction n) : mul zero p = zero := by
+  simp[mul]
+  ring
+
+@[simp]
+lemma mul_zero (p : PolyFraction n) : mul p zero = zero := by
+  simp[mul]
+  ring
+
+@[simp]
+lemma mul_comm (p q : PolyFraction n) : mul p q = mul q p := by
+  simp[mul]
+  ring
+
+@[simp]
+lemma mul_assoc (p q r : PolyFraction n) : mul (mul p q) r = mul p (mul q r) := by
+  simp[mul]
+  ring
+
+@[simp]
+lemma one_mul (p : PolyFraction n) : mul one p = p := by
+  simp[mul]
+
+@[simp]
+lemma mul_one (p : PolyFraction n) : mul p one = p := by
+  simp[mul]
+
+@[simp]
+lemma left_distrib (p q r : PolyFraction n) : mul p (add q r) = add (mul p q) (mul p r) := by
+  simp[mul, add]
+  ring
+
+@[simp]
+lemma right_distrib (p q r : PolyFraction n) : mul (add p q) r = add (mul p r) (mul q r) := by
+  simp[mul, add]
+  ring
+
+@[simp]
+lemma add_left_neg (p : PolyFraction n) : add (neg p) p = zero := by
+  simp[neg]
+  rw[add]
+  dsimp
+  ring
+
+
+instance : CommRing (PolyFraction n) where
+  zero := zero
+  zero_add := zero_add
+  add_zero := add_zero
+  zero_mul := zero_mul
+  mul_zero := mul_zero
+  add := add
+  add_comm := add_comm
+  add_assoc := add_assoc
+  one := one
+  one_mul := one_mul
+  mul_one := mul_one
+  mul := mul
+  mul_comm := mul_comm
+  mul_assoc := mul_assoc
+  left_distrib := left_distrib
+  right_distrib := right_distrib
+
 
 def DDenominator (i : Fin n) : PolyFraction n := by
   exact ⟨DemazureDenominator' i, 1, one_ne_zero⟩
@@ -507,6 +649,7 @@ SwapVariablesFun i j (X k) = X k := by
 @[simp]
 def equals (p q : PolyFraction n) : Prop := p.numerator * q.denominator = q.numerator * p.denominator
 
+
 @[simp]
 def of_polynomial (p : MvPolynomial (Fin (n + 1)) ℂ) : PolyFraction n := by
   exact ⟨p, 1, one_ne_zero⟩
@@ -570,3 +713,5 @@ lemma omg {i : ℕ} : i + 1 + 1 = i + 2 := by
   rw[h4]
   nth_rewrite 1 [← AlgEquiv.coe_apply_coe_coe_symm_apply (finSuccEquiv ℂ n) (DemazureNumerator i p /ₘ DemazureDenominator i)]
   rfl
+
+-/

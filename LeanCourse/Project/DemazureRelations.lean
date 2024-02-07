@@ -154,3 +154,12 @@ lemma composition_mul_monomial_non_adjacent (i j : Fin n) (h : |(i.val : ℤ ) -
   left
   simp[swap_variables_commutes_non_adjacent i j h, h1, h2, h3, h4, h1.symm, h2.symm, h3.symm, h4.symm]
   ring
+
+lemma composition_mul_monomial_adjacent (i : Fin n) (h : i + 1 < n) : ∀ p : MvPolynomial (Fin (n + 1)) ℂ,
+  equals (Dem i (of_polynomial (p * X (Fin.castSucc i)))) (add (mul (Dem i (of_polynomial p)) (of_polynomial (X (Fin.succ i)))) (of_polynomial p)) := by
+  intro p
+  simp[equals, mul, add]
+  left
+  ring
+
+end Demazure
