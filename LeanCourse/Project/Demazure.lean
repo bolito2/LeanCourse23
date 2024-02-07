@@ -464,6 +464,15 @@ instance has_equiv : HasEquiv (PolyFraction' n) := instHasEquiv
 lemma equiv_r {a b : PolyFraction' n} : (r n) a b ↔ a ≈ b := by
   rfl
 
+@[simp]
+lemma lift_r {a b : PolyFraction' n} {f : PolyFraction' n → PolyFraction' n → PolyFraction n}
+{c :  ∀ (a₁ b₁ a₂ b₂ : PolyFraction' n), a₁ ≈ a₂ → b₁ ≈ b₂ → f a₁ b₁ = f a₂ b₂} : Quotient.lift₂ f c (mk a) (mk b) = f a b := by
+  rfl
+
+lemma get_polyfraction_rep (p : PolyFraction n) : ∃p' : PolyFraction' n, mk p' = p := by
+    simp[mk]
+    apply Quotient.exists_rep p
+
 def add' (n : ℕ) : PolyFraction' n → PolyFraction' n → PolyFraction n :=
   fun p q => mk ⟨p.numerator * q.denominator + q.numerator * p.denominator, p.denominator * q.denominator, mul_ne_zero p.denominator_ne_zero q.denominator_ne_zero⟩
 
@@ -523,7 +532,16 @@ def neg (p : PolyFraction n) : PolyFraction n := by
 
 @[simp]
 lemma add_comm (p q : PolyFraction n) : add p q = add q p := by
-  funext
+  rcases get_polyfraction_rep p with ⟨p', hp⟩
+  rcases get_polyfraction_rep q with ⟨q', hq⟩
+  simp[add]
+  rw[← hp]
+  rw[← hq]
+  simp[lift_r]
+  simp[add']
+  apply Quotient.sound
+  apply equiv_r.mp
+  simp[r]
   ring
 
 @[simp]
