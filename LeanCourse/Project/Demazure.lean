@@ -17,9 +17,9 @@ set_option maxHeartbeats 10000000
 noncomputable section
 open MvPolynomial
 
-variable {n : ℕ} (n_pos : n > 0) (n_gt_1 : n > 1)
-
 namespace Demazure
+
+variable {n : ℕ} (n_pos : n > 0) (n_gt_1 : n > 1)
 
 /- Swapping variables of a polynomial is an algebra homomorphism -/
 
@@ -415,6 +415,7 @@ structure PolyFraction' (n : ℕ) where
   denominator : MvPolynomial (Fin (n + 1)) ℂ
   denominator_ne_zero : denominator ≠ 0
 
+
 def r (n : ℕ) : PolyFraction' n → PolyFraction' n → Prop :=
   fun p q => p.numerator * q.denominator = q.numerator * p.denominator
 
@@ -448,7 +449,7 @@ lemma r_equiv : Equivalence (r n) := by
   rw[h2]
   ring
 
-def s (n : ℕ) : Setoid (PolyFraction' n) where
+instance s (n : ℕ) : Setoid (PolyFraction' n) where
   r := r n
   iseqv := r_equiv
 
@@ -458,15 +459,41 @@ def PolyFraction (n : ℕ) := (Quotient (s n))
 
 def mk := Quotient.mk (s n)
 
-def add : PolyFraction' n → PolyFraction' n → PolyFraction n :=
+instance has_equiv : HasEquiv (PolyFraction' n) := instHasEquiv
+
+lemma equiv_r {a b : PolyFraction' n} : (r n) a b ↔ a ≈ b := by
+  rfl
+
+def add' (n : ℕ) : PolyFraction' n → PolyFraction' n → PolyFraction n :=
   fun p q => mk ⟨p.numerator * q.denominator + q.numerator * p.denominator, p.denominator * q.denominator, mul_ne_zero p.denominator_ne_zero q.denominator_ne_zero⟩
 
-lemma add_s : ∀ a1 a2 b1 b2 : PolyFraction' n, r n a1 b1 → r n a2 b2 → r n (add a1 a2) (add b1 b2) := by
-  intro a1 a2 b1 b2
+lemma add'_s (n : ℕ) : ∀ a₁ b₁ a₂ b₂ : PolyFraction' n, a₁ ≈ a₂ → b₁ ≈ b₂ → (add' n a₁ b₁) = (add' n a₂ b₂) := by
+  intro a1 b1 a2 b2
   intro h1 h2
-  simp[add]
+  simp[add']
+  apply Quotient.sound
+  apply equiv_r.mp
+  simp[r]
+  ring
+  rw[← equiv_r] at h1
+  rw[← equiv_r] at h2
+  simp[r] at h1
+  simp[r] at h2
+
+  rw[mul_comm a1.numerator]
+  rw[mul_assoc b1.denominator]
+  rw[h1]
+
+  rw[mul_comm b1.numerator]
+  rw[mul_assoc a1.denominator]
+  rw[mul_comm b1.numerator]
+  rw[mul_assoc a1.denominator]
+  rw[mul_assoc a2.denominator]
+  rw[h2]
   ring
 
+def add : PolyFraction n → PolyFraction n → PolyFraction n :=
+  fun p q ↦ Quotient.lift₂ (add' n) (add'_s n) p q
 
 def sub : PolyFraction n → PolyFraction n → PolyFraction n := by
   intro p q
@@ -496,7 +523,7 @@ def neg (p : PolyFraction n) : PolyFraction n := by
 
 @[simp]
 lemma add_comm (p q : PolyFraction n) : add p q = add q p := by
-  simp[add]
+  funext
   ring
 
 @[simp]
