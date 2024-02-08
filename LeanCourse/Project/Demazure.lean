@@ -465,7 +465,7 @@ lemma equiv_r {a b : PolyFraction' n} : (r n) a b ↔ a ≈ b := by
   rfl
 
 @[simp]
-lemma lift_r {a b : PolyFraction' n} {f : PolyFraction' n → PolyFraction' n → PolyFraction n}
+lemma lift2_r {a b : PolyFraction' n} {f : PolyFraction' n → PolyFraction' n → PolyFraction n}
 {c :  ∀ (a₁ b₁ a₂ b₂ : PolyFraction' n), a₁ ≈ a₂ → b₁ ≈ b₂ → f a₁ b₁ = f a₂ b₂} : Quotient.lift₂ f c (mk a) (mk b) = f a b := by
   rfl
 
@@ -544,7 +544,7 @@ def mul'{n : ℕ} : PolyFraction' n → PolyFraction' n → PolyFraction' n :=
 def mul_mk {n : ℕ} : PolyFraction' n → PolyFraction' n → PolyFraction n :=
   fun p q => mk (mul' p q)
 
-lemma mul'_s (n : ℕ) : ∀ a₁ b₁ a₂ b₂ : PolyFraction' n, a₁ ≈ a₂ → b₁ ≈ b₂ → (mul_mk a₁ b₁) = (mul_mk a₂ b₂) := by
+lemma mul'_s {n : ℕ} : ∀ a₁ b₁ a₂ b₂ : PolyFraction' n, a₁ ≈ a₂ → b₁ ≈ b₂ → (mul_mk a₁ b₁) = (mul_mk a₂ b₂) := by
   intro a1 b1 a2 b2
   intro h1 h2
   simp[mul_mk]
@@ -637,7 +637,7 @@ lemma add_comm (p q : PolyFraction n) : add p q = add q p := by
   simp[add]
   rw[← hp]
   rw[← hq]
-  simp[lift_r]
+  simp[lift2_r]
   simp[add_mk]
   apply Quotient.sound
   apply equiv_r.mp
@@ -660,14 +660,14 @@ lemma add_assoc (p q r : PolyFraction n) : add (add p q) r = add p (add q r) := 
     simp[add, add_mk]
 
   rw[hpq, hqr]
-  simp[add, lift_r]
+  simp[add, lift2_r]
   simp[add']
   apply Quotient.sound
   apply equiv_r.mp
   simp[Demazure.r, add']
   ring
 
-def DDenominator (i : Fin n) : PolyFraction n := by
+def DDenominator (i : Fin n) : PolyFraction' n := by
   exact ⟨DemazureDenominator' i, 1, one_ne_zero⟩
 
 lemma swap_variables_ne_zero (i j : Fin (n + 1)) : ∀ p : MvPolynomial (Fin (n + 1)) ℂ, p ≠ 0 → SwapVariables i j p ≠ 0 := by
@@ -692,15 +692,6 @@ lemma wario (i : Fin n) : (X (Fin.castSucc i) : MvPolynomial (Fin (n + 1)) ℂ) 
 
   rw [if_neg h]
   simp
-
-
-@[simp]
-def Dem (i : Fin n) : PolyFraction n →  PolyFraction n := fun p =>
-   ⟨
-    p.numerator * (SwapVariables (Fin.castSucc i) (Fin.succ i) p.denominator) - (SwapVariables (Fin.castSucc i) (Fin.succ i) p.numerator) * p.denominator,
-    p.denominator * (SwapVariables (Fin.castSucc i) (Fin.succ i) p.denominator) * (X (Fin.castSucc i) - X (Fin.succ i)),
-    mul_ne_zero (mul_ne_zero p.denominator_ne_zero (swap_variables_ne_zero (Fin.castSucc i) (Fin.succ i) p.denominator p.denominator_ne_zero)) (wario i)
-    ⟩
 
 @[simp]
 lemma transposition_first {i j : Fin (n + 1)} : TranspositionFun i j i = j := by
@@ -737,18 +728,65 @@ SwapVariablesFun i j (X k) = X k := by
   simp [SwapVariables, SwapVariablesFun, Transposition, TranspositionFun, h1, h2]
 
 @[simp]
-def equals (p q : PolyFraction n) : Prop := p.numerator * q.denominator = q.numerator * p.denominator
-
-
-@[simp]
-def of_polynomial (p : MvPolynomial (Fin (n + 1)) ℂ) : PolyFraction n := by
+def of_polynomial (p : MvPolynomial (Fin (n + 1)) ℂ) : PolyFraction' n := by
   exact ⟨p, 1, one_ne_zero⟩
 
-lemma demazure_order_two : ∀ (i : Fin n) (p : MvPolynomial (Fin (n + 1)) ℂ),
-  equals (Dem i (Dem i (of_polynomial p) )) zero := by
+def Dem' (i : Fin n) : PolyFraction' n →  PolyFraction' n := fun p =>
+   ⟨
+    p.numerator * (SwapVariables (Fin.castSucc i) (Fin.succ i) p.denominator) - (SwapVariables (Fin.castSucc i) (Fin.succ i) p.numerator) * p.denominator,
+    p.denominator * (SwapVariables (Fin.castSucc i) (Fin.succ i) p.denominator) * (X (Fin.castSucc i) - X (Fin.succ i)),
+    mul_ne_zero (mul_ne_zero p.denominator_ne_zero (swap_variables_ne_zero (Fin.castSucc i) (Fin.succ i) p.denominator p.denominator_ne_zero)) (wario i)
+    ⟩
+
+lemma demazure_order_two : ∀ (i : Fin n) (p : PolyFraction' n),
+  (Dem' i (Dem' i p)) ≈ zero' := by
   intro i p
-  simp[equals]
+  rw[← equiv_r]
+  simp[r, Dem']
   ring
+
+lemma Dem_well_defined (i : Fin n) : ∀ (p q : PolyFraction' n) (h : p ≈ q), ((mk ∘ Dem' i) p) = ((mk ∘ Dem' i) q) := by
+  intro p q h
+  simp[Dem']
+  apply Quotient.sound
+  apply equiv_r.mp
+  simp[r]
+  rw[← equiv_r] at h
+  simp[r] at h
+  ring
+  rw[mul_comm p.numerator]
+  rw[mul_assoc (SwapVariablesFun (Fin.castSucc i) (Fin.succ i) p.denominator)]
+  rw[h]
+
+  rw[mul_comm (SwapVariablesFun (Fin.castSucc i) (Fin.succ i) p.numerator)]
+  rw[mul_assoc p.denominator]
+  rw[mul_comm (SwapVariablesFun (Fin.castSucc i) (Fin.succ i) p.numerator)]
+  rw[mul_assoc p.denominator]
+  rw[mul_assoc q.denominator]
+  rw[← swap_variables_mul]
+  rw[h]
+
+  simp[swap_variables_mul]
+  ring
+
+def Dem (i : Fin n) (p : PolyFraction n) : PolyFraction n :=
+  Quotient.lift (mk ∘ (Dem' i)) (Dem_well_defined i) p
+
+@[simp]
+lemma lift_r {a: PolyFraction' n} {f : PolyFraction' n → PolyFraction' n}
+{c :  ∀ (a₁ a₂ : PolyFraction' n), a₁ ≈ a₂ → mk (f a₁) = mk (f a₂)} : Quotient.lift (mk ∘ f) c (mk a) = mk (f a) := by
+  rfl
+
+lemma demazure_quot_order_two : ∀ (i : Fin n) (p : PolyFraction n),
+  (Dem i (Dem i p)) = zero := by
+  intro i p
+  rcases get_polyfraction_rep p with ⟨p', rfl⟩
+  simp[Dem]
+  rw[lift_r]
+  rw[lift_r]
+  rw[zero]
+  apply Quotient.sound
+  exact demazure_order_two i p'
 
 @[simp]
 lemma wario_number_one {n : ℕ} {a : ℕ} {h : a < n} {a' : ℕ} {h' : a' < n} :
