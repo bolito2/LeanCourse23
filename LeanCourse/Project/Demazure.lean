@@ -458,6 +458,7 @@ instance s (n : ℕ) : Setoid (PolyFraction' n) where
 def PolyFraction (n : ℕ) := (Quotient (s n))
 
 def mk := Quotient.mk (s n)
+def mk' (p : MvPolynomial (Fin (n + 1)) ℂ) : PolyFraction n := mk ⟨p, 1, one_ne_zero⟩
 
 instance has_equiv : HasEquiv (PolyFraction' n) := instHasEquiv
 
@@ -772,10 +773,28 @@ lemma Dem_well_defined (i : Fin n) : ∀ (p q : PolyFraction' n) (h : p ≈ q), 
 def Dem (i : Fin n) (p : PolyFraction n) : PolyFraction n :=
   Quotient.lift (mk ∘ (Dem' i)) (Dem_well_defined i) p
 
-@[simp]
+-- This lemma substitutes a lift of a function applied at a representant class to the quotient
+-- of the function applied at the representant
+-- simp doesn't work here since it detects that complexity goes up, so we have to do it manually with rw[lift_r]
 lemma lift_r {a: PolyFraction' n} {f : PolyFraction' n → PolyFraction' n}
-{c :  ∀ (a₁ a₂ : PolyFraction' n), a₁ ≈ a₂ → mk (f a₁) = mk (f a₂)} : Quotient.lift (mk ∘ f) c (mk a) = mk (f a) := by
+{c :  ∀ (a₁ a₂ : PolyFraction' n), a₁ ≈ a₂ → (mk ∘ f) a₁ = (mk ∘ f) a₂} : Quotient.lift (mk ∘ f) c (mk a) = mk (f a) := by
   rfl
+
+@[simp]
+lemma mk_eq {a b : PolyFraction' n} : mk a = mk b ↔ a.numerator*b.denominator = a.denominator*b.numerator := by
+  constructor
+  intro h
+  simp[mk] at h
+  rw[← equiv_r] at h
+  simp[r] at h
+  rw[h]
+  ring
+  simp[mk]
+  rw[← equiv_r]
+  simp[r]
+  intro h
+  rw[h]
+  ring
 
 lemma demazure_quot_order_two : ∀ (i : Fin n) (p : PolyFraction n),
   (Dem i (Dem i p)) = zero := by
@@ -806,10 +825,13 @@ lemma i_ne_i_plus_1 {i : ℕ} {h : i < n + 1}  {h' : i + 1 < n + 1}  :
 lemma omg {i : ℕ} : i + 1 + 1 = i + 2 := by
   ring
 
-  lemma demazure_definitions_equivalent : ∀ i : Fin n, ∀ p : MvPolynomial (Fin (n + 1)) ℂ,
-  equals (Dem i (of_polynomial p)) (of_polynomial (DemazureFun i p)) := by
+lemma demazure_definitions_equivalent : ∀ i : Fin n, ∀ p : MvPolynomial (Fin (n + 1)) ℂ,
+  Dem i (mk' p) = mk' (DemazureFun i p) := by
   intro i p
-  simp[equals, Dem]
+  simp[Dem, mk']
+  rw[lift_r]
+  rw[mk_eq]
+  simp[Dem']
 
   have h : DemazureDenominator i * ((DemazureNumerator i p) /ₘ (DemazureDenominator i)) = DemazureNumerator i p := demazure_division_exact' i p
 
@@ -831,8 +853,6 @@ lemma omg {i : ℕ} : i + 1 + 1 = i + 2 := by
     simp [DemazureDenominator]
 
   rw[← h3]
-  rw [mul_comm (eval₂ (RingHom.comp Polynomial.C C) (fun i ↦ Fin.cases Polynomial.X (fun k ↦ Polynomial.C (X k)) i)
-      (SwapVariablesFun (Fin.castSucc i) 0 (DemazureFun i p))) (DemazureDenominator i)]
   rw[← poly_mul_cancel (demazure_denominator_ne_zero i)]
   simp[DemazureFun]
   have h4 {q : MvPolynomial (Fin (n + 1)) ℂ } : eval₂ (RingHom.comp Polynomial.C C) (fun i ↦ Fin.cases Polynomial.X (fun k ↦ Polynomial.C (X k)) i)
@@ -841,5 +861,3 @@ lemma omg {i : ℕ} : i + 1 + 1 = i + 2 := by
   rw[h4]
   nth_rewrite 1 [← AlgEquiv.coe_apply_coe_coe_symm_apply (finSuccEquiv ℂ n) (DemazureNumerator i p /ₘ DemazureDenominator i)]
   rfl
-
--/
