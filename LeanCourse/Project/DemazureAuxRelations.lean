@@ -4,11 +4,29 @@ import LeanCourse.Project.DemazureAux
 noncomputable section
 namespace Demazure
 
+-- Some computations are quite heavy, so we increase the number of heartbeats
+set_option maxHeartbeats 10000000
+
 open MvPolynomial
 
 variable {n : ℕ} (n_pos : n > 0)
 
-/- Basic composition relations for Demazure operators -/
+/- Composition relations for Demazure operators -/
+-- Start by proving that the Demazure Operator applied two times is the zero operator
+lemma demaux_order_two : ∀ (i : Fin n) (p : PolyFraction n),
+  (DemAux i  ∘ DemAux i) p = zero := by
+  intro i p
+  rcases get_polyfraction_rep p with ⟨p', rfl⟩
+  simp[DemAux]
+  rw[lift_r]
+  rw[lift_r]
+  rw[zero]
+  apply Quotient.sound
+  rw[← equiv_r]
+  simp[r, DemAux']
+  ring
+
+-- Prove the relation between demazure operations with adjacent indices
 lemma transposition_commutes_adjacent {i : Fin n} {j : Fin (n + 1)} (h0 : i < n + 1) (h1 : i + 1 < n + 1) (h2 : i + 2 < n + 1) :
   TranspositionFun ⟨i, h0⟩ ⟨i + 1, h1⟩ (TranspositionFun ⟨i + 1, h1⟩ ⟨i + 2, h2⟩ (TranspositionFun ⟨i, h0⟩ ⟨i + 1, h1⟩ j)) =
     TranspositionFun ⟨i + 1, h1⟩ ⟨i + 2, h2⟩ (TranspositionFun ⟨i, h0⟩ ⟨i + 1, h1⟩ (TranspositionFun ⟨i + 1, h1⟩ ⟨i + 2, h2⟩ j)) := by
@@ -20,7 +38,6 @@ lemma transposition_commutes_adjacent {i : Fin n} {j : Fin (n + 1)} (h0 : i < n 
   simp[c2]
 
   simp[c0,c1,c2]
-
 
 lemma swap_variables_commutes_adjacent {i : Fin n} {p : MvPolynomial (Fin (n + 1)) ℂ} (h0 : i < n + 1) (h1 : i + 1 < n + 1) (h2 : i + 2 < n + 1) :
   SwapVariablesFun ⟨i, h0⟩ ⟨i + 1, h1⟩ (SwapVariablesFun ⟨i + 1, h1⟩ ⟨i + 2, h2⟩ (SwapVariablesFun ⟨i, h0⟩ ⟨i + 1, h1⟩ p)) =
@@ -41,13 +58,12 @@ lemma swap_variables_commutes_adjacent {i : Fin n} {p : MvPolynomial (Fin (n + 1
             rw[transposition_commutes_adjacent h0 h1 h2]
   rw[huh]
 
-lemma DemAux_commutes_adjacent (i : Fin n) (h : i + 1 < n) : ∀ p : MvPolynomial (Fin (n + 1)) ℂ,
+lemma demaux_commutes_adjacent (i : Fin n) (h : i + 1 < n) : ∀ p : MvPolynomial (Fin (n + 1)) ℂ,
   (DemAux i ∘ DemAux ⟨i+1, h⟩ ∘ DemAux i) (mk' p) = (DemAux ⟨i+1, h⟩ ∘ DemAux i ∘ DemAux ⟨i+1, h⟩) (mk' p) := by
   intro p
   simp[DemAux, mk']
   repeat rw[lift_r]
   simp[DemAux']
-  apply mk_eq.mpr
   simp[h, Fin.castSucc, Fin.succ, Fin.castAdd, Fin.castLE]
   norm_num
 
@@ -61,16 +77,7 @@ lemma DemAux_commutes_adjacent (i : Fin n) (h : i + 1 < n) : ∀ p : MvPolynomia
   simp [swap_variables_commutes_adjacent h0 h1 h2]
   ring
 
-
-lemma composition_adjacent' (i : Fin n) (h : i + 1 < n) : ∀ p : MvPolynomial (Fin (n + 1)) ℂ,
-  (Demazure i ∘ Demazure ⟨i+1, h⟩ ∘ Demazure i) p = (Demazure ⟨i+1, h⟩ ∘ Demazure i ∘ Demazure ⟨i+1, h⟩) p := by
-  intro p
-  simp[Demazure]
-  apply eq_of_eq_mk'.mp
-  repeat rw[← demazure_definitions_equivalent]
-  apply DemAux_commutes_adjacent
-
-
+-- Helper lemma to get all important inequalities for non-adjacent indices
 lemma unfold_non_adjacent (i j : Fin n) (h : |(i.val : ℤ ) - j.val| > 1) :
   (Fin.castSucc i : Fin (n + 1)) ≠ (Fin.castSucc j : Fin (n + 1)) ∧
   (Fin.castSucc i : Fin (n + 1)) ≠ (Fin.succ j : Fin (n + 1)) ∧
@@ -96,6 +103,7 @@ lemma unfold_non_adjacent (i j : Fin n) (h : |(i.val : ℤ ) - j.val| > 1) :
     intro wah
     simp[wah] at h
 
+-- Now prove that demazure operators with non-adjacent indices commute
 lemma transposition_commutes_non_adjacent (i j : Fin n) {k : Fin (n + 1)} (h : |(i.val : ℤ ) - j.val| > 1) :
   TranspositionFun (Fin.castSucc i) (Fin.succ i) (TranspositionFun (Fin.castSucc j) (Fin.succ j) k) =
    TranspositionFun (Fin.castSucc j) (Fin.succ j) (TranspositionFun (Fin.castSucc i) (Fin.succ i) k) := by
@@ -134,7 +142,7 @@ lemma swap_variables_commutes_non_adjacent (i j : Fin n) (h : |(i.val : ℤ ) - 
     rw[wah]
 
 
-lemma composition_non_adjacent (i j : Fin n)  (h : |(i.val : ℤ ) - j.val| > 1) : ∀ p : MvPolynomial (Fin (n + 1)) ℂ,
+lemma demaux_commutes_non_adjacent (i j : Fin n)  (h : |(i.val : ℤ ) - j.val| > 1) : ∀ p : MvPolynomial (Fin (n + 1)) ℂ,
   (DemAux i ∘ DemAux j) (mk' p) = (DemAux j ∘ DemAux i) (mk' p) := by
   intro p
   simp[DemAux, mk']
@@ -156,7 +164,8 @@ lemma composition_non_adjacent (i j : Fin n)  (h : |(i.val : ℤ ) - j.val| > 1)
   exact h2.symm
   exact h4.symm
 
-/-- Composition with multiplication by monomial -/
+/-- Prove some relations between Demazure operators and multiplication by monomials, in the
+adjacent and non-adjacent cases -/
 lemma composition_mul_monomial_non_adjacent (i j : Fin n) (h : |(i.val : ℤ ) - j.val| > 1) : ∀ p : MvPolynomial (Fin (n + 1)) ℂ,
   DemAux i (mk' (p * X (Fin.castSucc j))) = (DemAux i (mk' p)) * (mk' (X (Fin.castSucc j))) := by
   intro p
@@ -178,4 +187,26 @@ lemma composition_mul_monomial_adjacent (i : Fin n) (h : i + 1 < n) : ∀ p : Mv
   simp[DemAux', mul', add']
   ring
 
-end Demazure
+lemma symm_invariant_swap_variables {i j : Fin n} {g : MvPolynomial (Fin n) ℂ} (h : MvPolynomial.IsSymmetric g) :
+  SwapVariablesFun i j g = g := by
+  simp[SwapVariablesFun]
+  exact h (Transposition i j)
+
+/- Now we prove that symmetric polynomials act as scalars -/
+lemma DemAux_mul_symm (i : Fin n) (g f : PolyFraction n) (h : IsSymmetric g) :
+  DemAux i (g*f) = g*(DemAux i f) := by
+
+  rcases h with ⟨g', ⟨rfl, g_num_symm, g_denom_symm⟩⟩
+  rcases get_polyfraction_rep f with ⟨f', rfl⟩
+  rw[mk_mul]
+  simp[DemAux]
+  repeat rw[lift_r]
+
+  rw[← simp_mul']
+  rw[← simp_mul]
+  rw[mk_mul]
+  rw[mk_eq]
+  simp[DemAux']
+
+  simp[symm_invariant_swap_variables g_num_symm, symm_invariant_swap_variables g_denom_symm]
+  ring

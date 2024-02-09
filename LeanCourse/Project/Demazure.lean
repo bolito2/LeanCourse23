@@ -132,12 +132,90 @@ def SwapVariables (i : Fin n) (j : Fin n) : AlgEquiv ℂ (MvPolynomial (Fin n) �
   commutes' := swap_variables_commutes
 
 -- Easy example
-
 def circleEquation : MvPolynomial (Fin 2) ℂ := X 0 ^ 2 + X 1 ^ 2 - C 1
 
 example : circleEquation = SwapVariables 0 1 circleEquation := by
   simp [circleEquation, SwapVariables, SwapVariablesFun, Transposition, TranspositionFun]
   ring
+
+/- some more properties of swap_variables and others -/
+
+lemma swap_variables_ne_zero (i j : Fin (n + 1)) : ∀ p : MvPolynomial (Fin (n + 1)) ℂ, p ≠ 0 → SwapVariables i j p ≠ 0 := by
+  intro p hp
+  intro h
+  apply hp
+  rw[← AlgEquiv.map_zero (SwapVariables i j)] at h
+  apply AlgEquiv.injective (SwapVariables i j)
+  exact h
+
+@[simp]
+lemma transposition_first {i j : Fin (n + 1)} : TranspositionFun i j i = j := by
+  simp [TranspositionFun]
+
+@[simp]
+lemma transposition_second {i j : Fin (n + 1)} : TranspositionFun i j j = i := by
+  simp [TranspositionFun]
+
+@[simp]
+lemma transposition_none {i j k : Fin (n + 1)} (h1 : k ≠ i) (h2 : k ≠ j) :
+TranspositionFun i j k = k := by
+  simp [TranspositionFun, h1, h2]
+
+@[simp]
+lemma swap_variables_first {i j : Fin (n + 1)} : SwapVariablesFun i j (X i) = X j := by
+  simp [SwapVariables, SwapVariablesFun, Transposition, TranspositionFun]
+
+lemma swap_variables_symmetrical {i j : Fin (n + 1)} {p : MvPolynomial (Fin (n + 1)) ℂ} : SwapVariablesFun i j p = SwapVariablesFun j i p := by
+  simp [SwapVariables, SwapVariablesFun, Transposition, transposition_symmetric]
+
+@[simp]
+lemma swap_variables_second {i j : Fin (n + 1)} : SwapVariablesFun i j (X j) = X i := by
+  simp [SwapVariables, SwapVariablesFun, Transposition, TranspositionFun]
+
+@[simp]
+lemma swap_variables_none {i j k : Fin (n + 1)} (h1 : k ≠ i) (h2 : k ≠ j) :
+SwapVariablesFun i j (X k) = X k := by
+  simp [SwapVariables, SwapVariablesFun, Transposition, TranspositionFun, h1, h2]
+
+@[simp]
+lemma swap_variables_none' {i j k : Fin (n + 1)} {h1 : k ≠ i} {h2 : k ≠ j} :
+SwapVariablesFun i j (X k) = X k := by
+  simp [SwapVariables, SwapVariablesFun, Transposition, TranspositionFun, h1, h2]
+
+/- Some really specific and technical lemmas-/
+lemma fin_succ_ne_fin_castSucc (i : Fin n) : Fin.succ i ≠ Fin.castSucc i := by
+  apply Fin.val_ne_iff.mp
+  dsimp
+  norm_num
+  
+@[simp]
+lemma wario_number_one {n : ℕ} {a : ℕ} {h : a < n} {a' : ℕ} {h' : a' < n} :
+({ val := a, isLt := h } : Fin n) ≠ { val := a', isLt := h' } ↔ a ≠ a' := by
+  rw[ne_eq]
+  rw[ne_eq]
+  apply not_iff_not.mpr
+  exact Fin.mk_eq_mk
+
+
+lemma i_ne_i_plus_1 {i : ℕ} {h : i < n + 1}  {h' : i + 1 < n + 1}  :
+ ({ val := i, isLt := h } : Fin (n + 1)) ≠ { val := i + 1, isLt := h' } := by
+  rw[wario_number_one]
+  linarith
+
+lemma wario (i : Fin n) : (X (Fin.castSucc i) : MvPolynomial (Fin (n + 1)) ℂ) - X (Fin.succ i) ≠ 0 := by
+  apply MvPolynomial.ne_zero_iff.mpr
+  use Finsupp.single (Fin.succ i) 1
+  rw[MvPolynomial.coeff_sub]
+  rw[MvPolynomial.coeff_X]
+  rw[MvPolynomial.coeff_X']
+
+  have h : Finsupp.single (Fin.castSucc i) 1 ≠ Finsupp.single (Fin.succ i) 1 := by
+    apply FunLike.ne_iff.mpr
+    use Fin.castSucc i
+    simp [fin_succ_ne_fin_castSucc i]
+
+  rw [if_neg h]
+  simp
 
 /- Now we can use these to define the demazure numerator. We distinguish the variable x_i
  to perform division by (x_i - x_(i+1)) later (only univariable division is supported) -/
@@ -204,11 +282,6 @@ lemma demazure_denominator_monic : ∀ i : Fin n, Polynomial.Monic (DemazureDeno
   intro i
   simp[DemazureDenominator]
   exact Polynomial.monic_X_sub_C (X i)
-
-lemma fin_succ_ne_fin_castSucc (i : Fin n) : Fin.succ i ≠ Fin.castSucc i := by
-  apply Fin.val_ne_iff.mp
-  dsimp
-  norm_num
 
 /- the division is exact so the demazure operator is well defined
 (division by polynomials returns just the quotient) -/
