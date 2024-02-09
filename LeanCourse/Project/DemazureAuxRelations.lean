@@ -193,6 +193,9 @@ lemma symm_invariant_swap_variables {i j : Fin n} {g : MvPolynomial (Fin n) ℂ}
   exact h (Transposition i j)
 
 /- Now we prove that symmetric polynomials act as scalars -/
+def IsSymmetric (p : PolyFraction n) : Prop := ∃p' : PolyFraction' n,
+ mk p' = p ∧ MvPolynomial.IsSymmetric p'.numerator ∧ MvPolynomial.IsSymmetric p'.denominator
+
 lemma DemAux_mul_symm (i : Fin n) (g f : PolyFraction n) (h : IsSymmetric g) :
   DemAux i (g*f) = g*(DemAux i f) := by
 

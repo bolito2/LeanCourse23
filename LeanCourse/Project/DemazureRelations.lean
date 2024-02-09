@@ -27,9 +27,6 @@ lemma demaux_commutes_adjacent (i : Fin n) (h : i + 1 < n) : ∀ p : MvPolynomia
   repeat rw[← demazure_definitions_equivalent]
   apply DemAux_commutes_adjacent
 
-def IsSymmetric (p : PolyFraction n) : Prop := ∃p' : PolyFraction' n,
- mk p' = p ∧ MvPolynomial.IsSymmetric p'.numerator ∧ MvPolynomial.IsSymmetric p'.denominator
-
 lemma Demazure_mul_symm (i : Fin n) (g f : MvPolynomial (Fin (n + 1)) ℂ) (h : MvPolynomial.IsSymmetric g) :
  Demazure i (g*f) = g*(Demazure i f) := by
   simp[Demazure]
