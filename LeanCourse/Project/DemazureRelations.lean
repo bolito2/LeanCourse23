@@ -54,7 +54,7 @@ lemma demazure_mul_monomial_non_adjacent (i j : Fin n) (h : |(i.val : ℤ ) - j.
   rw[← mk'_mul]
   rw[← demazure_definitions_equivalent]
   rw[mk'_mul]
-  apply composition_mul_monomial_non_adjacent i j h
+  apply demaux_mul_monomial_non_adjacent i j h
 
 -- Relation between demazure operator and multiplication by adjacent monomial
 lemma demazure_mul_monomial_adjacent (i : Fin n) (h : i + 1 < n) : ∀ p : MvPolynomial (Fin (n + 1)) ℂ,
@@ -67,7 +67,7 @@ lemma demazure_mul_monomial_adjacent (i : Fin n) (h : i + 1 < n) : ∀ p : MvPol
   rw[← mk'_mul]
 
   repeat rw[← demazure_definitions_equivalent]
-  apply composition_mul_monomial_adjacent i h
+  apply demaux_mul_monomial_adjacent i h
 
 
 -- Symmetric polynomials act as scalars wrt Demazure operators
