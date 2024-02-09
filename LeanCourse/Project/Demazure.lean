@@ -380,3 +380,7 @@ lemma demazure_not_multiplicative : ∀ (i : Fin n), ∃(p q : MvPolynomial (Fin
   rw[one_of_div_by_monic_self]
   simp[AlgHom.map_one]
   exact Polynomial.monic_X_sub_C (X i)
+
+/- Doing anything with the definition, even simple things, requires a lot of work given
+the complexity of the definition. That's why in DemazureAux.lean we introduce an alternative
+definition that will be the one we actually use for computations -/
