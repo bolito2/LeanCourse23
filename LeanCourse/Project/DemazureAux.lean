@@ -389,6 +389,20 @@ lemma eq_of_eq_mk' {p q : MvPolynomial (Fin (n + 1)) ℂ} : mk' p = mk' q ↔ p 
   intro h
   simp[h]
 
+
+/- Some lemmas for interplay between mk and add -/
+@[simp]
+lemma simp_add {p q : PolyFraction n} : p + q = add p q := rfl
+
+lemma mk_add {p q : PolyFraction' n} :  ((mk p) : PolyFraction n) + mk q = mk (p + q) := by
+  have h1 : p+q = add' p q := by rfl
+  have h2 : mk p + mk q = add (mk p) (mk q) := by rfl
+
+  simp[add, add_mk, add', h1, h2]
+
+lemma mk'_add : ∀ (p q : MvPolynomial (Fin (n + 1)) ℂ), mk' (p + q) = mk' p + mk' q := by
+  simp[mk', mk_add, add, add_mk, add']
+
 @[simp]
 lemma simp_mul' {p q : PolyFraction' n} : p * q = ⟨p.numerator * q.numerator, p.denominator * q.denominator, mul_ne_zero p.denominator_ne_zero q.denominator_ne_zero⟩ := rfl
 

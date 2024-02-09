@@ -115,7 +115,7 @@ lemma demaux_commutes_non_adjacent (i j : Fin n)  (h : |(i.val : ℤ ) - j.val| 
 
 /-- Prove some relations between Demazure operators and multiplication by monomials, in the
 adjacent and non-adjacent cases -/
-lemma composition_mul_monomial_non_adjacent (i j : Fin n) (h : |(i.val : ℤ ) - j.val| > 1) : ∀ p : MvPolynomial (Fin (n + 1)) ℂ,
+lemma demaux_mul_monomial_non_adjacent (i j : Fin n) (h : |(i.val : ℤ ) - j.val| > 1) : ∀ p : MvPolynomial (Fin (n + 1)) ℂ,
   DemAux i (mk' (p * X (Fin.castSucc j))) = (DemAux i (mk' p)) * (mk' (X (Fin.castSucc j))) := by
   intro p
   simp[DemAux, mul]
@@ -127,7 +127,7 @@ lemma composition_mul_monomial_non_adjacent (i j : Fin n) (h : |(i.val : ℤ ) -
   simp[swap_variables_commutes_non_adjacent i j h, h1, h2, h3, h4, h1.symm, h2.symm, h3.symm, h4.symm]
   ring
 
-lemma composition_mul_monomial_adjacent (i : Fin n) (h : i + 1 < n) : ∀ p : MvPolynomial (Fin (n + 1)) ℂ,
+lemma demaux_mul_monomial_adjacent (i : Fin n) (h : i + 1 < n) : ∀ p : MvPolynomial (Fin (n + 1)) ℂ,
   (DemAux i (mk' (p * X (Fin.castSucc i)))) = (DemAux i (mk' p)) * (mk' (X (Fin.succ i))) + mk' p := by
   intro p
   simp[DemAux, mk']
@@ -145,7 +145,7 @@ lemma symm_invariant_swap_variables {i j : Fin n} {g : MvPolynomial (Fin n) ℂ}
 def IsSymmetric (p : PolyFraction n) : Prop := ∃p' : PolyFraction' n,
  mk p' = p ∧ MvPolynomial.IsSymmetric p'.numerator ∧ MvPolynomial.IsSymmetric p'.denominator
 
-lemma DemAux_mul_symm (i : Fin n) (g f : PolyFraction n) (h : IsSymmetric g) :
+lemma demaux_mul_symm (i : Fin n) (g f : PolyFraction n) (h : IsSymmetric g) :
   DemAux i (g*f) = g*(DemAux i f) := by
 
   rcases h with ⟨g', ⟨rfl, g_num_symm, g_denom_symm⟩⟩
