@@ -141,9 +141,12 @@ lemma swap_variables_commutes_non_adjacent (i j : Fin n) (h : |(i.val : ℤ ) - 
 
 
 lemma composition_non_adjacent (i j : Fin n)  (h : |(i.val : ℤ ) - j.val| > 1) : ∀ p : MvPolynomial (Fin (n + 1)) ℂ,
-  equals ((DemAux i ∘ DemAux j) (of_polynomial p)) ((DemAux j ∘ DemAux i) (of_polynomial p)) := by
+  (DemAux i ∘ DemAux j) (mk' p) = (DemAux j ∘ DemAux i) (mk' p) := by
   intro p
-  simp[equals]
+  simp[DemAux, mk']
+  repeat rw[lift_r]
+  apply mk_eq.mpr
+  simp[DemAux']
 
   rcases unfold_non_adjacent i j h with ⟨h1, h2, h3, h4⟩
 
@@ -161,21 +164,24 @@ lemma composition_non_adjacent (i j : Fin n)  (h : |(i.val : ℤ ) - j.val| > 1)
 
 /-- Composition with multiplication by monomial -/
 lemma composition_mul_monomial_non_adjacent (i j : Fin n) (h : |(i.val : ℤ ) - j.val| > 1) : ∀ p : MvPolynomial (Fin (n + 1)) ℂ,
-  equals (DemAux i (of_polynomial (p * X (Fin.castSucc j)))) (mul (DemAux i (of_polynomial p)) (of_polynomial (X (Fin.castSucc j)))) := by
+  DemAux i (mk' (p * X (Fin.castSucc j))) = (DemAux i (mk' p)) * (mk' (X (Fin.castSucc j))) := by
   intro p
-  simp[equals, mul]
+  simp[DemAux, mul]
+  repeat rw[lift_r]
+  apply mk_eq.mpr
+  simp[DemAux', mul']
 
   rcases unfold_non_adjacent i j h with ⟨h1, h2, h3, h4⟩
-  left
   simp[swap_variables_commutes_non_adjacent i j h, h1, h2, h3, h4, h1.symm, h2.symm, h3.symm, h4.symm]
   ring
 
 lemma composition_mul_monomial_adjacent (i : Fin n) (h : i + 1 < n) : ∀ p : MvPolynomial (Fin (n + 1)) ℂ,
-  equals (DemAux i (of_polynomial (p * X (Fin.castSucc i)))) (add (mul (DemAux i (of_polynomial p)) (of_polynomial (X (Fin.succ i)))) (of_polynomial p)) := by
+  (DemAux i (mk' (p * X (Fin.castSucc i)))) = (DemAux i (mk' p)) * (mk' (X (Fin.succ i))) + mk' p := by
   intro p
-  simp[equals, mul, add]
-  left
+  simp[DemAux, mk']
+  repeat rw[lift_r]
+  apply mk_eq.mpr
+  simp[DemAux', mul', add']
   ring
 
 end Demazure
-

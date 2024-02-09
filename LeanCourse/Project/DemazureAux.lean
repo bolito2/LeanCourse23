@@ -108,6 +108,9 @@ lemma add'_s {n : ℕ} : ∀ a₁ b₁ a₂ b₂ : PolyFraction' n, a₁ ≈ a�
 def add : PolyFraction n → PolyFraction n → PolyFraction n :=
   fun p q ↦ Quotient.lift₂ (add_mk) (add'_s) p q
 
+instance addition : Add (PolyFraction n) := ⟨add⟩
+instance addition' : Add (PolyFraction' n) := ⟨add'⟩
+
 def sub' {n : ℕ} : PolyFraction' n → PolyFraction' n → PolyFraction n :=
   fun p q ↦ mk ⟨p.numerator * q.denominator - q.numerator * p.denominator, p.denominator * q.denominator, mul_ne_zero p.denominator_ne_zero q.denominator_ne_zero⟩
 
@@ -169,6 +172,9 @@ lemma mul'_s {n : ℕ} : ∀ a₁ b₁ a₂ b₂ : PolyFraction' n, a₁ ≈ a�
 
 def mul : PolyFraction n → PolyFraction n → PolyFraction n :=
   fun p q ↦ Quotient.lift₂ (mul_mk) (mul'_s) p q
+
+instance multiplication' : Mul (PolyFraction' n) := ⟨mul'⟩
+instance multiplication : Mul (PolyFraction n) := ⟨mul⟩
 
 def inv' (p : PolyFraction' n) (h : p.numerator ≠ 0) : PolyFraction' n := by
   exact ⟨p.denominator, p.numerator, h⟩
