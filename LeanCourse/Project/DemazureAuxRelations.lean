@@ -214,4 +214,4 @@ lemma demaux_commutes_adjacent (i : Fin n) (h : i + 1 < n) : ∀ p : MvPolynomia
     linarith
 
   simp [swap_variables_commutes_adjacent h0 h1 h2]
-  sorry
+  ring
