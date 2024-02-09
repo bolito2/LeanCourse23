@@ -196,6 +196,10 @@ lemma swap_variables_commutes_adjacent {i : Fin n} {p : MvPolynomial (Fin (n + 1
             rw[transposition_commutes_adjacent h0 h1 h2]
   rw[huh]
 
+@[simp]
+lemma omg {i : ℕ} : i + 1 + 1 = i + 2 := by
+  ring
+
 -- This takes a lot of time to compute
 lemma demaux_commutes_adjacent (i : Fin n) (h : i + 1 < n) : ∀ p : MvPolynomial (Fin (n + 1)) ℂ,
   (DemAux i ∘ DemAux ⟨i+1, h⟩ ∘ DemAux i) (mk' p) = (DemAux ⟨i+1, h⟩ ∘ DemAux i ∘ DemAux ⟨i+1, h⟩) (mk' p) := by

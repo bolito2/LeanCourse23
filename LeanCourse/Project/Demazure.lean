@@ -102,6 +102,14 @@ lemma swap_variables_mul' (i j : Fin n) : ∀p q :
   intro p q
   simp[SwapVariablesFun]
 
+lemma swap_variables_mul'' {i j : Fin n} {p q : MvPolynomial (Fin n) ℂ} :
+ SwapVariablesFun i j (p * q) = SwapVariablesFun i j p * SwapVariablesFun i j q := by
+  simp[SwapVariablesFun]
+
+lemma swap_variables_add'' {i j : Fin n} {p q : MvPolynomial (Fin n) ℂ} :
+ SwapVariablesFun i j (p + q) = SwapVariablesFun i j p + SwapVariablesFun i j q := by
+  simp[SwapVariablesFun]
+
 @[simp]
 lemma swap_variables_commutes {i j : Fin n} : ∀r : ℂ, SwapVariablesFun i j (C r) = C r := by
   intro r
@@ -187,7 +195,7 @@ lemma fin_succ_ne_fin_castSucc (i : Fin n) : Fin.succ i ≠ Fin.castSucc i := by
   apply Fin.val_ne_iff.mp
   dsimp
   norm_num
-  
+
 @[simp]
 lemma wario_number_one {n : ℕ} {a : ℕ} {h : a < n} {a' : ℕ} {h' : a' < n} :
 ({ val := a, isLt := h } : Fin n) ≠ { val := a', isLt := h' } ↔ a ≠ a' := by

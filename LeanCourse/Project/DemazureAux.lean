@@ -200,27 +200,6 @@ def mul : PolyFraction n → PolyFraction n → PolyFraction n :=
 instance multiplication' : Mul (PolyFraction' n) := ⟨mul'⟩
 instance multiplication : Mul (PolyFraction n) := ⟨mul⟩
 
-def inv' (p : PolyFraction' n) (h : p.numerator ≠ 0) : PolyFraction' n := by
-  exact ⟨p.denominator, p.numerator, h⟩
-
-def inv_mk (p : PolyFraction' n) (h : p.numerator ≠ 0) : PolyFraction n :=
-  mk (inv' p h)
-
-lemma inv'_s (n : ℕ) : ∀ (a₁ a₂ : PolyFraction' n) (h1 : a₁.numerator ≠ 0) (h2 : a₂.numerator ≠ 0),
- a₁ ≈ a₂ → (inv_mk a₁ h1) = (inv_mk a₂ h2) := by
-  intro a1 a2
-  intro h1 h2
-  intro h
-  simp[inv_mk, inv']
-  ring
-  rw[← equiv_r] at h
-  simp[r] at h
-  rw[mul_comm]
-  rw[← h]
-
-def inv (p : PolyFraction' n) (h : p.numerator ≠ 0) : PolyFraction n := by
-  sorry
-
 @[simp]
 def one' : PolyFraction' n where
   numerator := 1
@@ -288,6 +267,8 @@ lemma add_assoc (p q r : PolyFraction n) : add (add p q) r = add p (add q r) := 
   apply equiv_r.mp
   simp[Demazure.r, add']
   ring
+
+-- We don't prove that it is a ring since we don't need all the properties for our use
 
 /- We directly define the Demazure operator on fractions (even though we proved that
 the result is a polynomial, for the proofs it's better to keep the result as a fraction)-/
