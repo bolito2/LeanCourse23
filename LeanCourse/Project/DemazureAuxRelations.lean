@@ -9,12 +9,6 @@ open MvPolynomial
 variable {n : ℕ} (n_pos : n > 0)
 
 /- Basic composition relations for Demazure operators -/
-
-lemma symm_invariant_swap_variables {i j : Fin n} {g : MvPolynomial (Fin n) ℂ} (h : MvPolynomial.IsSymmetric g) :
-  SwapVariables i j g = g := by
-  simp[SwapVariables, SwapVariablesFun]
-  exact h (Transposition i j)
-
 lemma transposition_commutes_adjacent {i : Fin n} {j : Fin (n + 1)} (h0 : i < n + 1) (h1 : i + 1 < n + 1) (h2 : i + 2 < n + 1) :
   TranspositionFun ⟨i, h0⟩ ⟨i + 1, h1⟩ (TranspositionFun ⟨i + 1, h1⟩ ⟨i + 2, h2⟩ (TranspositionFun ⟨i, h0⟩ ⟨i + 1, h1⟩ j)) =
     TranspositionFun ⟨i + 1, h1⟩ ⟨i + 2, h2⟩ (TranspositionFun ⟨i, h0⟩ ⟨i + 1, h1⟩ (TranspositionFun ⟨i + 1, h1⟩ ⟨i + 2, h2⟩ j)) := by

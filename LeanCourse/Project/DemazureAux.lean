@@ -56,7 +56,7 @@ instance s (n : ℕ) : Setoid (PolyFraction' n) where
 
 def PolyFraction (n : ℕ) := (Quotient (s n))
 
-def mk := Quotient.mk (s n)
+def mk (p : PolyFraction' n) : PolyFraction n := Quotient.mk (s n) p
 def to_frac (p : MvPolynomial (Fin (n + 1)) ℂ) : PolyFraction' n := ⟨p, 1, one_ne_zero⟩
 def mk' (p : MvPolynomial (Fin (n + 1)) ℂ) : PolyFraction n := mk ⟨p, 1, one_ne_zero⟩
 
@@ -383,14 +383,16 @@ lemma mk_eq {a b : PolyFraction' n} : mk a = mk b ↔ a.numerator*b.denominator 
   constructor
   intro h
   simp[mk] at h
+  rw[Quotient.eq] at h
   rw[← equiv_r] at h
   simp[r] at h
   rw[h]
   ring
   simp[mk]
+  intro h
+  apply Quotient.sound
   rw[← equiv_r]
   simp[r]
-  intro h
   rw[h]
   ring
 
@@ -471,8 +473,6 @@ lemma eq_zero_of_mk'_zero {p : MvPolynomial (Fin (n + 1)) ℂ} : mk' p = zero �
   constructor
   intro h
   simp[mk', zero] at h
-  rw[mk_eq] at h
-  simp[r] at h
   exact h
   intro h
   simp[h, mk', zero]
@@ -481,8 +481,6 @@ lemma eq_of_eq_mk' {p q : MvPolynomial (Fin (n + 1)) ℂ} : mk' p = mk' q ↔ p 
   constructor
   intro h
   simp[mk'] at h
-  rw[mk_eq] at h
-  simp at h
   exact h
   intro h
   simp[h]
@@ -496,3 +494,62 @@ lemma demazure_fr_order_two : ∀ (i : Fin n) (p : MvPolynomial (Fin (n + 1)) �
   rw[← demazure_definitions_equivalent]
 
   exact demazure_quot_order_two i (mk' p)
+
+def IsSymmetric (p : PolyFraction n) : Prop := ∃p' : PolyFraction' n,
+ mk p' = p ∧ MvPolynomial.IsSymmetric p'.numerator ∧ MvPolynomial.IsSymmetric p'.denominator
+
+@[simp]
+lemma simp_mul' {p q : PolyFraction' n} : p * q = ⟨p.numerator * q.numerator, p.denominator * q.denominator, mul_ne_zero p.denominator_ne_zero q.denominator_ne_zero⟩ := rfl
+
+@[simp]
+lemma simp_mul {p q : PolyFraction n} : p * q = mul p q := rfl
+
+lemma mk_mul {p q : PolyFraction' n} :  ((mk p) : PolyFraction n) * mk q = mk (p * q) := by
+  have h1 : p*q = mul' p q := by rfl
+  have h2 : mk p * mk q = mul (mk p) (mk q) := by rfl
+
+  simp[mul, mul_mk, mul']
+
+lemma mk'_mul {p q : MvPolynomial (Fin (n + 1)) ℂ} :  mk' p * mk' q = mk' (p * q) := by
+  simp[mk', mul_mk, mul', mul]
+
+lemma symm_invariant_swap_variables {i j : Fin n} {g : MvPolynomial (Fin n) ℂ} (h : MvPolynomial.IsSymmetric g) :
+  SwapVariablesFun i j g = g := by
+  simp[SwapVariablesFun]
+  exact h (Transposition i j)
+
+
+lemma DemAux_mul_symm (i : Fin n) (g f : PolyFraction n) (h : IsSymmetric g) : DemAux i (g*f) = g*(DemAux i f) := by
+  rcases h with ⟨g', ⟨rfl, g_num_symm, g_denom_symm⟩⟩
+  rcases get_polyfraction_rep f with ⟨f', rfl⟩
+  rw[mk_mul]
+  simp[DemAux]
+  repeat rw[lift_r]
+
+  rw[← simp_mul']
+  rw[← simp_mul]
+  rw[mk_mul]
+  rw[mk_eq]
+  simp[DemAux']
+
+  simp[symm_invariant_swap_variables g_num_symm, symm_invariant_swap_variables g_denom_symm]
+  ring
+
+lemma Demazure_mul_symm (i : Fin n) (g f : MvPolynomial (Fin (n + 1)) ℂ) (h : MvPolynomial.IsSymmetric g) :
+ Demazure i (g*f) = g*(Demazure i f) := by
+  simp[Demazure]
+  rw[← eq_of_eq_mk']
+  rw[← demazure_definitions_equivalent]
+  rw [← mk'_mul]
+  rw [← mk'_mul]
+  rw[← demazure_definitions_equivalent]
+
+  have : IsSymmetric (mk' g) := by
+    simp[IsSymmetric]
+    use (to_frac g)
+    simp[to_frac]
+    constructor
+    rfl
+    exact h
+
+  exact DemAux_mul_symm i (mk' g) (mk' f) this
