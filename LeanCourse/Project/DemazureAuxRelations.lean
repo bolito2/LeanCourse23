@@ -1,4 +1,5 @@
 import LeanCourse.Project.Demazure
+import LeanCourse.Project.DemazureAux
 
 noncomputable section
 namespace Demazure
@@ -46,9 +47,13 @@ lemma swap_variables_commutes_adjacent {i : Fin n} {p : MvPolynomial (Fin (n + 1
             rw[transposition_commutes_adjacent h0 h1 h2]
   rw[huh]
 
-lemma composition_adjacent (i : Fin n) (h : i + 1 < n) : ∀ p : MvPolynomial (Fin (n + 1)) ℂ,
-  equals ((Dem i ∘ Dem ⟨i+1, h⟩ ∘ Dem i) (of_polynomial p)) ((Dem ⟨i+1, h⟩ ∘ Dem i ∘ Dem ⟨i+1, h⟩) (of_polynomial p)) := by
+lemma DemAux_commutes_adjacent (i : Fin n) (h : i + 1 < n) : ∀ p : MvPolynomial (Fin (n + 1)) ℂ,
+  (DemAux i ∘ DemAux ⟨i+1, h⟩ ∘ DemAux i) (mk' p) = (DemAux ⟨i+1, h⟩ ∘ DemAux i ∘ DemAux ⟨i+1, h⟩) (mk' p) := by
   intro p
+  simp[DemAux, mk']
+  repeat rw[lift_r]
+  simp[DemAux']
+  apply mk_eq.mpr
   simp[h, Fin.castSucc, Fin.succ, Fin.castAdd, Fin.castLE]
   norm_num
 
@@ -61,6 +66,16 @@ lemma composition_adjacent (i : Fin n) (h : i + 1 < n) : ∀ p : MvPolynomial (F
 
   simp [swap_variables_commutes_adjacent h0 h1 h2]
   ring
+
+
+lemma composition_adjacent' (i : Fin n) (h : i + 1 < n) : ∀ p : MvPolynomial (Fin (n + 1)) ℂ,
+  (Demazure i ∘ Demazure ⟨i+1, h⟩ ∘ Demazure i) p = (Demazure ⟨i+1, h⟩ ∘ Demazure i ∘ Demazure ⟨i+1, h⟩) p := by
+  intro p
+  simp[Demazure]
+  apply eq_of_eq_mk'.mp
+  repeat rw[← demazure_definitions_equivalent]
+  apply DemAux_commutes_adjacent
+
 
 lemma unfold_non_adjacent (i j : Fin n) (h : |(i.val : ℤ ) - j.val| > 1) :
   (Fin.castSucc i : Fin (n + 1)) ≠ (Fin.castSucc j : Fin (n + 1)) ∧
@@ -126,7 +141,7 @@ lemma swap_variables_commutes_non_adjacent (i j : Fin n) (h : |(i.val : ℤ ) - 
 
 
 lemma composition_non_adjacent (i j : Fin n)  (h : |(i.val : ℤ ) - j.val| > 1) : ∀ p : MvPolynomial (Fin (n + 1)) ℂ,
-  equals ((Dem i ∘ Dem j) (of_polynomial p)) ((Dem j ∘ Dem i) (of_polynomial p)) := by
+  equals ((DemAux i ∘ DemAux j) (of_polynomial p)) ((DemAux j ∘ DemAux i) (of_polynomial p)) := by
   intro p
   simp[equals]
 
@@ -146,7 +161,7 @@ lemma composition_non_adjacent (i j : Fin n)  (h : |(i.val : ℤ ) - j.val| > 1)
 
 /-- Composition with multiplication by monomial -/
 lemma composition_mul_monomial_non_adjacent (i j : Fin n) (h : |(i.val : ℤ ) - j.val| > 1) : ∀ p : MvPolynomial (Fin (n + 1)) ℂ,
-  equals (Dem i (of_polynomial (p * X (Fin.castSucc j)))) (mul (Dem i (of_polynomial p)) (of_polynomial (X (Fin.castSucc j)))) := by
+  equals (DemAux i (of_polynomial (p * X (Fin.castSucc j)))) (mul (DemAux i (of_polynomial p)) (of_polynomial (X (Fin.castSucc j)))) := by
   intro p
   simp[equals, mul]
 
@@ -156,10 +171,11 @@ lemma composition_mul_monomial_non_adjacent (i j : Fin n) (h : |(i.val : ℤ ) -
   ring
 
 lemma composition_mul_monomial_adjacent (i : Fin n) (h : i + 1 < n) : ∀ p : MvPolynomial (Fin (n + 1)) ℂ,
-  equals (Dem i (of_polynomial (p * X (Fin.castSucc i)))) (add (mul (Dem i (of_polynomial p)) (of_polynomial (X (Fin.succ i)))) (of_polynomial p)) := by
+  equals (DemAux i (of_polynomial (p * X (Fin.castSucc i)))) (add (mul (DemAux i (of_polynomial p)) (of_polynomial (X (Fin.succ i)))) (of_polynomial p)) := by
   intro p
   simp[equals, mul, add]
   left
   ring
 
 end Demazure
+
