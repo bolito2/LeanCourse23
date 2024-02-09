@@ -21,7 +21,10 @@ namespace Demazure
 
 variable {n : ℕ} (n_pos : n > 0) (n_gt_1 : n > 1)
 
-/- Swapping variables of a polynomial is an algebra homomorphism -/
+/- In this file we define the Demazure operator directly as a function
+  in the ring of multivariate polynomials -/
+
+/- Prerequisites - Function to swap two variables of a polynomial -/
 
 def TranspositionFun (i j : Fin n) : Fin n → Fin n :=
   fun k ↦ if k = i then j else if k = j then i else k
@@ -111,6 +114,7 @@ lemma swap_variables_order_two {i j : Fin n} {p : MvPolynomial (Fin n) ℂ} :
   rw[transposition_order_two' i j]
   apply MvPolynomial.rename_id
 
+-- SwapVariables is an algebra equivalence
 @[simp]
 def SwapVariables (i : Fin n) (j : Fin n) : AlgEquiv ℂ (MvPolynomial (Fin n) ℂ) (MvPolynomial (Fin n) ℂ) where
   toFun := SwapVariablesFun i j
@@ -127,13 +131,16 @@ def SwapVariables (i : Fin n) (j : Fin n) : AlgEquiv ℂ (MvPolynomial (Fin n) �
   map_add' := swap_variables_add
   commutes' := swap_variables_commutes
 
-/- Easy example -/
+-- Easy example
 
 def circleEquation : MvPolynomial (Fin 2) ℂ := X 0 ^ 2 + X 1 ^ 2 - C 1
 
 example : circleEquation = SwapVariables 0 1 circleEquation := by
   simp [circleEquation, SwapVariables, SwapVariablesFun, Transposition, TranspositionFun]
   ring
+
+/- Now we can use these to define the demazure numerator. We distinguish the variable x_i
+ to perform division by (x_i - x_(i+1)) later (only univariable division is supported) -/
 
 def DemazureNumerator (i : Fin n) (p : MvPolynomial (Fin (n + 1)) ℂ) : Polynomial (MvPolynomial (Fin n) ℂ)  :=
   let i' : Fin (n + 1) := Fin.castSucc i
@@ -143,6 +150,7 @@ def DemazureNumerator (i : Fin n) (p : MvPolynomial (Fin (n + 1)) ℂ) : Polynom
   let numerator_X_i_at_start : MvPolynomial (Fin (n + 1)) ℂ := SwapVariables i' 0 numerator
   (finSuccEquiv ℂ n) numerator_X_i_at_start
 
+-- after all those steps we end up with this mess that we can simplify directly with the following lemma
 lemma unfold_demazure_numerator {i : Fin n} {p : MvPolynomial (Fin (n + 1)) ℂ} : DemazureNumerator i p =
 eval₂ (RingHom.comp Polynomial.C C) (fun i ↦ Fin.cases Polynomial.X (fun k ↦ Polynomial.C (X k)) i)
     (SwapVariablesFun (Fin.castSucc i) 0 (p - SwapVariablesFun (Fin.castSucc i) (Fin.succ i) p)) := by
@@ -180,6 +188,7 @@ lemma demazure_numerator_C_mul (i : Fin n) : ∀ (p : MvPolynomial (Fin (n + 1))
           ((SwapVariables (Fin.castSucc i) 0)
             ((SwapVariables (Fin.castSucc i) (Fin.succ i)) p)))).symm
 
+-- Now we also define the denominator taking the variable x_i as the variable to divide by
 def DemazureDenominator (i : Fin n) : Polynomial (MvPolynomial (Fin n) ℂ)  :=
   let X_i : MvPolynomial (Fin n) ℂ := MvPolynomial.X i
   let denominator_X : Polynomial (MvPolynomial (Fin n) ℂ) := (Polynomial.X - Polynomial.C X_i)
@@ -201,6 +210,8 @@ lemma fin_succ_ne_fin_castSucc (i : Fin n) : Fin.succ i ≠ Fin.castSucc i := by
   dsimp
   norm_num
 
+/- the division is exact so the demazure operator is well defined
+(division by polynomials returns just the quotient) -/
 lemma demazure_division_exact : ∀(i : Fin n), ∀(p : MvPolynomial (Fin (n + 1)) ℂ),
   (DemazureNumerator i p).modByMonic (DemazureDenominator i) = 0 := by
     intro i p
@@ -244,6 +255,7 @@ lemma demazure_division_exact : ∀(i : Fin n), ∀(p : MvPolynomial (Fin (n + 1
     simp[h1,h2,h3, fin_succ_ne_fin_castSucc i, Fin.succ_ne_zero]
     simp[h1,h2,h3, fin_succ_ne_fin_castSucc i, Fin.succ_ne_zero]
 
+-- Now we can define the Demazure operator
 def DemazureFun (i : Fin n) (p : MvPolynomial (Fin (n + 1)) ℂ) : MvPolynomial (Fin (n + 1)) ℂ  :=
   let numerator := DemazureNumerator i p
   let denominator := DemazureDenominator i
@@ -256,8 +268,7 @@ def DemazureFun (i : Fin n) (p : MvPolynomial (Fin (n + 1)) ℂ) : MvPolynomial 
 
   SwapVariables i' 0 division_mv
 
--- The main theorem to prove
-
+/- Some auxiliary lemmas for the multivariate polynomial ring -/
 lemma poly_mul_cancel {p q r : Polynomial (MvPolynomial (Fin n) ℂ)} (hr : r ≠ 0) : p = q ↔ (r * p) = (r * q) := by
   constructor
   intro h
@@ -297,11 +308,15 @@ lemma poly_exact_div_mul_cancel {p q : Polynomial (MvPolynomial (Fin n) ℂ)}
   rw[← exact_div]
   exact Polynomial.modByMonic_add_div p q_monic
 
+-- since the division is exact, the quotient perfectly divides the numerator
 lemma demazure_division_exact' : ∀(i : Fin n), ∀(p : MvPolynomial (Fin (n + 1)) ℂ),
    DemazureDenominator i * ((DemazureNumerator i p) /ₘ (DemazureDenominator i)) = DemazureNumerator i p := by
   intro i p
 
   apply poly_exact_div_mul_cancel (demazure_denominator_monic i) (demazure_division_exact i p)
+
+/- Now we prove that the Demazure operator is a linear map directly with the definition.
+  This requires a lot of work to disentangle it -/
 
 lemma demazure_map_add (i : Fin n) : ∀p q : MvPolynomial (Fin (n + 1)) ℂ,
   DemazureFun i (p + q) = DemazureFun i p + DemazureFun i q := by
@@ -352,6 +367,7 @@ lemma one_of_div_by_monic_self : ∀ (p : Polynomial (MvPolynomial (Fin n) ℂ))
   apply poly_exact_div_mul_cancel hp this
 
 
+-- Example showing that the demazure operator doesn't respect the multiplication
 lemma demazure_not_multiplicative : ∀ (i : Fin n), ∃(p q : MvPolynomial (Fin (n+1)) ℂ),
   Demazure i (p * q) ≠ Demazure i p * Demazure i q := by
   intro i
@@ -364,4 +380,3 @@ lemma demazure_not_multiplicative : ∀ (i : Fin n), ∃(p q : MvPolynomial (Fin
   rw[one_of_div_by_monic_self]
   simp[AlgHom.map_one]
   exact Polynomial.monic_X_sub_C (X i)
-
