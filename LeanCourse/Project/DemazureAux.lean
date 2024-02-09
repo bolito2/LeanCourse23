@@ -553,3 +553,19 @@ lemma Demazure_mul_symm (i : Fin n) (g f : MvPolynomial (Fin (n + 1)) ℂ) (h : 
     exact h
 
   exact DemAux_mul_symm i (mk' g) (mk' f) this
+
+
+def Dem (i : Fin n) : LinearMap (RingHom.id (MvPolynomial.symmetricSubalgebra (Fin (n + 1)) ℂ))
+ (MvPolynomial (Fin (n + 1)) ℂ) (MvPolynomial (Fin (n + 1)) ℂ) where
+  toFun := DemazureFun i
+  map_add' := demazure_map_add i
+  map_smul' := by
+    intro r x
+    simp
+    let p : MvPolynomial (Fin (n + 1)) ℂ := r
+    have wah : p = r := by rfl
+    have h : MvPolynomial.IsSymmetric p := by
+      apply (MvPolynomial.mem_symmetricSubalgebra p).mp
+      rw[wah]
+      exact SetLike.coe_mem r
+    exact Demazure_mul_symm i p x h
